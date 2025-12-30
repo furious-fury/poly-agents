@@ -103,7 +103,7 @@ function Layout({ children, activeTab = 'dashboard', setActiveTab }: LayoutProps
                             </div>
                         </div>
                         <a
-                            href="https://x.com/PolyAgents"
+                            href="https://x.com/Poly_Agents/"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="block w-full text-center py-2 rounded-xl bg-white hover:bg-blue-50 text-blue-600 text-xs font-bold transition-colors shadow-sm"
