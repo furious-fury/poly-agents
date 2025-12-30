@@ -27,11 +27,12 @@ portfolioRouter.get("/balance/:userId", async (req, res) => {
     }
 });
 
-// GET /api/portfolio/history/:userId
+// GET /api/portfolio/history/:userId?range=24h|1w|1m
 portfolioRouter.get("/history/:userId", async (req, res) => {
     try {
         const userId = req.params.userId;
-        const history = await PortfolioService.getHistory(userId);
+        const range = (req.query.range as '24h' | '1w' | '1m') || '24h';
+        const history = await PortfolioService.getHistory(userId, range);
         res.json({ success: true, history });
     } catch (err) {
         console.error("History error:", err);

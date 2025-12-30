@@ -24,6 +24,10 @@ model User {
   apiSecret     String?
   apiPassphrase String?
 
+  // Kalshi API Credentials (Encrypted/Stored)
+  kalshiApiKey     String? // The UUID Key ID
+  kalshiPrivateKey String? // The PEM Private Key
+
   // User-Configurable Risk Limits
   maxTradeAmount       Float @default(100)
   maxMarketExposure    Float @default(500)
@@ -43,8 +47,8 @@ model User {
 
 model TrackedWallet {
   id      String  @id @default(cuid())
-  user    User    @relation(fields: [userId], references: [id])
-  userId  String
+  user    User?   @relation(fields: [userId], references: [id])
+  userId  String?
   address String
   name    String?
 

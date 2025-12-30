@@ -1,7 +1,7 @@
 import { prisma } from "../config/database.js";
 import { Portfolio } from "../models/Portfolio.js";
 import { Side } from "../generated/prisma/client.js";
-import { get_positions, get_balance } from "../tools/polymarket.js";
+import { getMarketTool } from "../tools/MarketAdapter.js";
 
 export interface TradeRecord {
     userId: string;
@@ -27,6 +27,12 @@ export class PortfolioService {
                 PortfolioService.getAllUserPositions(userId)
             ]);
 
+            // Fix: Abort if data fetch failed to avoid recording false drops (spikes)
+            if (!balanceObj || !positions) {
+                console.warn(`[Snapshot] Aborted for ${userId} due to missing data (Network/RPC failure).`);
+                return null;
+            }
+
             const cashBalance = parseFloat(balanceObj.usdc || "0");
             const positionsValue = positions.reduce((sum: number, p: any) => sum + (p.exposure || 0), 0);
             const totalValue = cashBalance + positionsValue;
@@ -50,26 +56,55 @@ export class PortfolioService {
     /**
      * Get portfolio history for chart
      */
-    static async getHistory(userId: string) {
-        // Fetch existing history
-        const history = await prisma.portfolioSnapshot.findMany({
-            where: { userId },
-            orderBy: { timestamp: 'asc' },
-            take: 168 // Approx 1 week of hourly data
+    static async getHistory(userId: string, range: '24h' | '1w' | '1m' = '24h') {
+        let since = new Date();
+        switch (range) {
+            case '24h':
+                since.setHours(since.getHours() - 24);
+                break;
+            case '1w':
+                since.setDate(since.getDate() - 7);
+                break;
+            case '1m':
+                since.setDate(since.getDate() - 30);
+                break;
+        }
+
+        // Fetch records within the timeframe
+        // Increase limit to ensure we cover the full range even with frequent snapshots
+        const rawHistory = await prisma.portfolioSnapshot.findMany({
+            where: {
+                userId,
+                timestamp: { gte: since }
+            },
+            orderBy: { timestamp: 'desc' },
+            take: 5000
         });
 
-        // 1. Check if we need a new snapshot (Lazy Tracking)
-        // If no history, OR last snapshot > 1 hour ago
+        // Restore chronological order (oldest -> newest)
+        let history = rawHistory.reverse();
+
+        // 1. Filter out known "bad data" artifacts (spurious drops to near-zero)
+        history = history.filter(h => h.totalValue > 1.0);
+
+        // 2. Downsample if too many points (Recharts performance)
+        // Target ~500 points max
+        if (history.length > 500) {
+            const step = Math.ceil(history.length / 500);
+            history = history.filter((_, index) => index % step === 0);
+        }
+
+        // Check if we need a new snapshot (Lazy Tracking) - Only trigger on '24h' view or if very stale
         const lastSnapshot = history[history.length - 1];
         const now = new Date();
+        // If empty history OR last snapshot > 1 hour ago, take a new one
         const shouldSnapshot = !lastSnapshot || (now.getTime() - lastSnapshot.timestamp.getTime() > 60 * 60 * 1000);
 
-        if (shouldSnapshot) {
+        if (shouldSnapshot && range === '24h') {
             // Take snapshot in background (or await if we want fresh data immediately)
-            // Awaiting for better UX on first load
+            console.log(`[PortfolioService] Lazy snapshot triggered for ${userId}`);
             const newSnap = await PortfolioService.takeSnapshot(userId);
             if (newSnap) {
-                // Add to returned list (mock id/timestamp for speed)
                 history.push({
                     id: "temp",
                     userId,
@@ -127,33 +162,15 @@ export class PortfolioService {
      * Fetch current positions for a user or agent from Polymarket API
      */
     static async getAllUserPositions(userId: string) {
-        // Fetch from Gamma API via polymarket tool
-        const apiPositions: any[] = await get_positions(userId); // Ensure this is imported
-
-        // Map to frontend expected format
-        // Map to frontend expected format
-        return apiPositions.map((p: any) => ({
-            id: p.asset || p.conditionId || Math.random().toString(),
-            userId,
-            marketId: p.asset || p.conditionId || "unknown", // Data API doesn't return 'market' ID, use asset/condition
-            marketTitle: p.title || "Unknown Market",
-            icon: p.icon, // Map icon
-            outcome: p.outcome || "YES",
-            shares: Number(p.size || 0),
-            avgEntryPrice: Number(p.avgPrice || 0), // Data API uses avgPrice
-            initialValue: Number(p.initialValue || 0), // Map initialValue (Cost Basis)
-            exposure: Number(p.currentValue || 0),  // Data API uses currentValue
-            pnl: Number(p.cashPnl || 0),           // Cash PnL
-            percentPnl: Number(p.percentPnl || 0), // Percentage PnL
-            currentPrice: Number(p.curPrice || 0)
-        }));
+        // Fetch Normalized Positions from Active Tool
+        return await getMarketTool().get_positions(userId);
     }
 
     /**
      * Fetch user balance (USDC & POL)
      */
     static async getUserBalance(userId: string) {
-        return await get_balance(userId);
+        return await getMarketTool().get_balance(userId);
     }
 
     /**

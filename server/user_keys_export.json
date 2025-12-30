@@ -1,0 +1,65 @@
+[
+  {
+    "userId": "cmj2j5ra500cq01k4ratcjm63",
+    "userName": "User-GU78FW-1765523587900",
+    "eoaAddress": "GU78FWL9hZRMntyMxEwSAKqUyN64GWwz2cxjektNchDa",
+    "proxyAddress": "0x5108e71eaAfC3a19AFA7bc3139B934a1E77A5394",
+    "privateKey": "0x3545daa3611d367be74a6f1daa2e4a1f06788b9383090eba2d889d763f912dd5",
+    "balanceUSDC": "0",
+    "balancePOL": "0"
+  },
+  {
+    "userId": "cmj2guxux000g01k4hrtc772k",
+    "userName": "User-J5GHZv-1765519723989",
+    "eoaAddress": "J5GHZvPpTxmwCocZYhuT8CSQYHeXGD8sgKnmH9TUuYbj",
+    "proxyAddress": "0x0F9230A18FC4337D426Fc0e65790a99dA7b02B60",
+    "privateKey": "0x3545daa3611d367be74a6f1daa2e4a1f06788b9383090eba2d889d763f912dd5",
+    "balanceUSDC": "0",
+    "balancePOL": "0"
+  },
+  {
+    "userId": "cmj2hc11d001c01k4jgrxxrig",
+    "userName": "User-BsmnmR-1765520521481",
+    "eoaAddress": "BsmnmR9RNhHDZqtzpS15o2No4tXoVrx6156dA3aAphiF",
+    "proxyAddress": "0x5cb61E08F10231d48Ec84231F31f542F2a2ebf08",
+    "privateKey": "0x123eea4a08e512e6fab21a1c123096e3e25bc5e6d176708e941c2ca0e441e915",
+    "balanceUSDC": "0",
+    "balancePOL": "0"
+  },
+  {
+    "userId": "cmj0wvx3z0000c0iy4kpt03hb",
+    "userName": "User-FfmLmC-1765425709957",
+    "eoaAddress": "FfmLmCDaPo5RqKaAT5vHKNwNugKdqFqW5cVEGD12fNR6",
+    "proxyAddress": "0x3Dfa346Da333495f508f7b3d40882E1F56138b0F",
+    "privateKey": "0xebf5a02e172f8fa09473d948133181df598c6bae8535f00d70178bf1b0bd310e",
+    "balanceUSDC": "0",
+    "balancePOL": "0"
+  },
+  {
+    "userId": "cmj4nwywk001e01meguoh9hx7",
+    "userName": "User-GXyw81-1765652508442",
+    "eoaAddress": "GXyw81KgN5SYTPdPzMS65NLtesHLshnePtmiCZPC81JR",
+    "proxyAddress": "0xf7fc60136fe8f46c0895ad0e0a0935e67769244a",
+    "privateKey": "0x3026d1cc59d4278729ea6ce489f56e3bbb99f96480113cbe668d868757f1671f",
+    "balanceUSDC": "0",
+    "balancePOL": "0"
+  },
+  {
+    "userId": "cmj4ogydj006101mevhakao8a",
+    "userName": "User-3BAbKd-1765653440975",
+    "eoaAddress": "3BAbKdji7ArkiSH41Re1YNVvo5zTPHbPkkG8dzhLHdxc",
+    "proxyAddress": "0xC0A0A6c937E807a072e79c4F3902E873ed77E01a",
+    "privateKey": "6f4e961e67f1d2d591bb5079672c58378222d0219db030e4e186d397c9983127",
+    "balanceUSDC": "0",
+    "balancePOL": "0"
+  },
+  {
+    "userId": "cmj2is7xu008w01k4a7aw49am",
+    "userName": "User-KuKwYy-1765522956540",
+    "eoaAddress": "KuKwYyiJMiLJ4LaY5XW5phcBBgXsjrrBWdgrPiyfnsf",
+    "proxyAddress": "0x74edd5dcb94d51822128b68ebad0a7162d471aab",
+    "privateKey": "0x1082484aead716dad70889f9590f117aeee9631f3745c7ebcd9e66484c40f9b7",
+    "balanceUSDC": "0",
+    "balancePOL": "0"
+  }
+]

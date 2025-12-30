@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "nodemon -e ts,json --ignore dist/ --exec \"npx tsc && node dist/server.js\""
+    "start": "node dist/src/server.js",
+    "dev": "nodemon -e ts,json --ignore dist/ --exec \"npx tsc && node dist/src/server.js\""
   },
   "keywords": [],
   "author": "",
@@ -38,6 +38,7 @@
     "ethers": "^5.8.0",
     "express": "^5.2.1",
     "https-proxy-agent": "^7.0.6",
+    "kalshi-typescript": "^3.3.0",
     "node-fetch": "^3.3.2",
     "nodemon": "^3.1.11",
     "openai": "^6.10.0",

@@ -13,14 +13,11 @@ import { Toaster } from "sonner";
 
 import { useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import GlobalActivityFeed from '../components/GlobalActivityFeed';
 import DashboardStats from '../components/DashboardStats';
 import { useUserSettings, useLoginUser } from '../lib/api';
-import { Zap, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-
+// import { AlertTriangle } from 'lucide-react';
+// import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingScreen } from '../components/LoadingScreen';
 
 function Dashboard() {
@@ -94,7 +91,7 @@ function Dashboard() {
         // If connected and (logging in OR (logged in but fetching initial settings))
         if (connected && (isInitialLoad || (dbUserId && isSettingsLoading))) {
             return (
-                <div className="absolute inset-0 z-50 bg-main">
+                <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
                     <LoadingScreen fullScreen={false} message="Loading Dashboard..." subMessage="Syncing your agents and portfolio" />
                 </div>
             );
@@ -103,21 +100,21 @@ function Dashboard() {
         if (!connected) {
             return (
                 <div className="flex flex-col items-center justify-center h-[60vh] space-y-6 animate-in fade-in zoom-in duration-500">
-                    <div className="p-6 bg-blue-500/10 rounded-full ring-1 ring-blue-500/30 shadow-[0_0_50px_-10px_rgba(59,130,246,0.3)]">
-                        <div className="p-4 bg-blue-500/20 rounded-full">
-                            <Zap size={48} className="text-blue-400" />
+                    <div className="p-6 bg-accent/10 rounded-full ring-1 ring-accent/30 shadow-[0_0_50px_-10px_var(--color-accent-glow)]">
+                        <div className="p-4 bg-accent/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
                         </div>
                     </div>
                     <div className="text-center space-y-2">
-                        <h2 className="text-2xl font-bold text-white">Connect Your Wallet</h2>
-                        <p className="text-gray-400 max-w-md">
+                        <h2 className="text-2xl font-bold text-gray-900">Connect Your Wallet</h2>
+                        <p className="text-gray-600 max-w-md">
                             Access your autonomous trading agents, view real-time stats, and manage your portfolio.
                         </p>
                     </div>
-                    <div className="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-sm text-gray-400 flex items-center gap-2">
+                    <div className="px-6 py-3 bg-gray-100 border border-gray-200 rounded-full text-sm text-gray-600 flex items-center gap-2">
                         <span>Please click</span>
                         <div className="scale-75 origin-center">
-                            <WalletMultiButton />
+                            <button className="wallet-adapter-button wallet-adapter-button-trigger" type="button">Connect Wallet</button>
                         </div>
                         <span>in the top right</span>
                     </div>
@@ -130,8 +127,7 @@ function Dashboard() {
             return (
                 <div className="max-w-4xl mx-auto pt-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="mb-8 text-center">
-                        <div className="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/30 animate-pulse">
-                            <Zap size={32} className="text-purple-400" />
+                        <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-accent/30 animate-pulse">
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-2">Complete Your Setup</h2>
                         <p className="text-gray-400">Import your Polymarket Credentials to enable autonomous trading.</p>
@@ -150,37 +146,47 @@ function Dashboard() {
                 return (
                     <div className="animate-in fade-in duration-500">
                         {/* Status Alert */}
-                        <Alert variant="warning" className="mb-6 border-yellow-500/50 bg-yellow-500/10 text-yellow-500">
+                        {/* <Alert variant="warning" className="mb-6 border-yellow-500/50 bg-yellow-500/10 text-yellow-500">
                             <AlertTriangle className="h-4 w-4" />
                             <AlertTitle>Polymarket Service Update</AlertTitle>
                             <AlertDescription>
                                 We’re currently experiencing a delay in positions appearing due to an issue with Goldsky. Your funds are safe and all trades are processing normally. Please avoid submitting duplicate orders.
                             </AlertDescription>
-                        </Alert>
+                        </Alert> */}
 
                         {/* Stats Overview */}
                         <div className="mb-5">
-                            <h3 className="text-xl font-bold text-white -mb-4">Stats Overview</h3>
+                            <h3 className="text-xl font-bold mb-4">Stats Overview</h3>
                             <DashboardStats userId={dbUserId} />
                         </div>
 
                         {/* Wallet Control (Deposit/Withdraw) removed as requested */}
 
-                        <div className="grid grid-cols-1 gap-6 mb-8">
-                            {/* Compact Agent View */}
-                            <div>
-                                <h3 className="text-xl font-bold text-white mb-4">Deployed Agents</h3>
-                                <AgentControl dbUserId={dbUserId} variant="compact" />
-                                <div className="mt-2 flex justify-end">
-                                    <button
-                                        onClick={() => setActiveTab('agents')}
-                                        className="text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors flex items-center gap-1"
-                                    >
-                                        Show More &rarr;
-                                    </button>
+                        {/* Bento Grid Layout (50/50 Split) */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 items-start">
+                            {/* Left Column: Agents List (1/2 width) */}
+                            <div className="space-y-8">
+                                <div>
+                                    <div className="flex items-center justify-between mb-6 pl-1">
+                                        <h3 className="text-xl font-bold text-gray-900">Deployed Agents</h3>
+                                        <button
+                                            onClick={() => setActiveTab('agents')}
+                                            className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors flex items-center gap-1"
+                                        >
+                                            View All &rarr;
+                                        </button>
+                                    </div>
+                                    <AgentControl dbUserId={dbUserId} variant="compact" layout="list" />
                                 </div>
                             </div>
-                            <GlobalActivityFeed userId={dbUserId} />
+
+                            {/* Right Column: Activity Feed (1/2 width) */}
+                            <div>
+                                <h3 className="text-xl font-bold mb-6 pl-1 text-gray-900">Live Activity</h3>
+                                <div className="sticky top-24">
+                                    <GlobalActivityFeed userId={dbUserId} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );

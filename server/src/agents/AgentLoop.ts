@@ -313,7 +313,10 @@ export class AgentLoop {
             // Fetch live balance from Polymarket
             const { PortfolioService } = await import("../services/PortfolioService.js");
             const liveBalanceObj = await PortfolioService.getUserBalance(this.userId);
-            const liveBalance = parseFloat(liveBalanceObj.usdc || "0");
+            if (!liveBalanceObj) {
+                console.warn(`[AgentLoop] Failed to fetch balance for user ${this.userId}, assuming 0 for now.`);
+            }
+            const liveBalance = parseFloat(liveBalanceObj?.usdc || "0");
 
             logger.info(`💰 Live Balance: $${liveBalance} (DB shows: $${user?.balance || 0})`);
 

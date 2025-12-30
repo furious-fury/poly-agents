@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
+    "rootDir": ".",
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
@@ -30,9 +30,10 @@
     "experimentalSpecifierResolution": "node"
   },
   "include": [
-    "./src",
+    "./src"
   ],
   "exclude": [
-    "./src/debug"
+    "./src/debug",
+    "./scripts"
   ]
 }

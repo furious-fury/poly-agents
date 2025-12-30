@@ -27,6 +27,8 @@ export class PositionManager {
 
         const actionsToTake = [];
 
+        if (!positions) return []; // Return empty suggestions if fetch failed
+
         for (const position of positions) {
             // Filter: Only check positions managed by this agent? 
             // Currently, our DB 'Position' model tracks 'agentId', but the PortfolioService fetches *all* positions for the user from Polymarket.

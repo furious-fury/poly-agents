@@ -1,262 +1,103 @@
 
 import { ethers } from "ethers";
 import { prisma } from "../config/database.js";
-import { SmartAccountSigner } from "./smart-account-signer.js";
-import { SmartWalletService } from "../services/smartWallet.service.js";
 import fetch from "node-fetch"; // Use node-fetch for proxy support
 import { HttpsProxyAgent } from "https-proxy-agent";
 import axios from "axios";
 import { SecurityService } from "../services/SecurityService.js";
+import { type MarketTool, type Position, type Balance, type TradeHistory, type Market, type TradeParams } from "../interfaces/MarketTool.js";
+export { type Market, type TradeParams };
+import { ClobClient, AssetType } from "@polymarket/clob-client";
+import WebSocket from 'ws';
 
 // Configure Proxy if available
 const proxyUrl = process.env.POLY_PROXY_URL;
 const agent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
 
 if (proxyUrl && agent) {
-    console.log(`[PROXY] 🛡️ Using Residential Proxy: ${proxyUrl.replace(/:[^:]*@/, ":***@")}`); // Log masked
-    // Spoof User-Agent to look like Chrome
+    console.log(`[PROXY] 🛡️ Using Residential Proxy: ${proxyUrl.replace(/:[^:]*@/, ":***@")}`);
     const CHROME_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
     const applyInterceptors = (instance: any) => {
         instance.interceptors.request.use((config: any) => {
-            config.headers['User-Agent'] = CHROME_UA;
-            config.headers['sec-ch-ua'] = '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"';
-            config.headers['sec-ch-ua-mobile'] = '?0';
-            config.headers['sec-ch-ua-platform'] = '"Windows"';
+            if (!config.headers) config.headers = {};
+            if (config.headers.set && typeof config.headers.set === 'function') {
+                config.headers.set('User-Agent', CHROME_UA);
+            } else {
+                config.headers['User-Agent'] = CHROME_UA;
+                config.headers['user-agent'] = CHROME_UA;
+            }
             return config;
         });
     };
 
-    // 1. Configure Global Defaults
     axios.defaults.httpsAgent = agent;
     axios.defaults.proxy = false;
     applyInterceptors(axios);
 
-    // 2. Monkey Patch axios.create to catch libraries (like ClobClient) creating their own instances
     const originalCreate = axios.create;
     axios.create = function (config) {
         const newConfig = { ...config };
-        // Force agent on new instances
         newConfig.httpsAgent = agent;
         newConfig.proxy = false;
-
         const instance = originalCreate.call(this, newConfig);
         applyInterceptors(instance);
         return instance;
     };
-
-    console.log("[PROXY] 🛡️ Axios patched globally for User-Agent spoofing and Proxy support.");
-}
-
-// Export TradeParams as expected by other files
-export interface TradeParams {
-    userId: string;
-    agentId?: string; // Optional context
-    marketId: string; // This is the TokenID for order placement 
-    outcome: string; // "YES" or "NO"
-    side: string;    // "BUY" or "SELL"
-    amount: number;  // Amount in USDC
-    price?: number;  // Optional limit price
-}
-
-export interface Market {
-    id: string;
-    question: string;
-    outcome: string;
-    bestBid: number;
-    bestAsk: number;
-    volume24hr: number;
-    questionId: string;
-    conditionId: string;
-    tokenIds?: string[];
 }
 
 const GAMMA_API_URL = "https://gamma-api.polymarket.com";
 
-/**
- * Fetches top active markets from Gamma API
- */
-export const get_markets = async (limit: number = 20): Promise<Market[]> => {
-    try {
-        const response = await fetch(`${GAMMA_API_URL}/markets?active=true&closed=false&limit=${limit}&order=volume24hr&ascending=false`, { agent });
-        if (!response.ok) throw new Error("Failed to fetch markets");
-        const data: any = await response.json();
-        return data.map((m: any) => ({
-            id: m.id, // Use internal ID (e.g. "570360") for Gamma API lookups
-            question: m.question,
-            outcome: "Yes",
-            bestBid: m.bestBid,
-            bestAsk: m.bestAsk,
-            volume24hr: m.volume24hr,
-            // Tag extra data
-            questionId: m.questionID,
-            conditionId: m.conditionId,
-            tokenIds: m.clobTokenIds
-        }));
-    } catch (error) {
-        console.error("get_markets error:", error);
-        return [];
-    }
-};
+// Helper: Get robust provider with fallback (Singleton)
+let cachedProvider: ethers.providers.FallbackProvider | null = null;
 
-/**
- * Search markets by query string (e.g. "Bitcoin", "Election")
- */
-export const search_markets = async (query: string): Promise<Market[]> => {
-    try {
-        const encoded = encodeURIComponent(query);
-        const response = await fetch(`${GAMMA_API_URL}/markets?active=true&closed=false&question=${encoded}&limit=10&order=volume24hr&ascending=false`, { agent });
+const getMultiProvider = () => {
+    if (cachedProvider) return cachedProvider;
 
-        if (!response.ok) return [];
-        const data: any = await response.json();
+    const primaryUrl = process.env.POLYGON_RPC_URL;
+    const fallbacks = [
+        "https://polygon.drpc.org",
+        "https://rpc.ankr.com/polygon",
+        "https://polygon-bor.publicnode.com",
+        "https://1rpc.io/matic"
+    ];
 
-        return data.map((m: any) => ({
-            id: m.id,
-            question: m.question,
-            outcome: "Yes",
-            bestBid: m.bestBid,
-            bestAsk: m.bestAsk,
-            volume24hr: m.volume24hr,
-            questionId: m.questionID,
-            conditionId: m.conditionId,
-            tokenIds: m.clobTokenIds
-        }));
-    } catch (error) {
-        console.error("search_markets error:", error);
-        return [];
-    }
-};
+    const providers: ethers.providers.FallbackProviderConfig[] = [];
 
-/**
- * Fetches active events (with markets nested)
- */
-export const get_active_events = async (limit: number = 20) => {
-    try {
-        const response = await fetch(`${GAMMA_API_URL}/events?active=true&closed=false&limit=${limit}&order=volume24hr&ascending=false`, { agent });
-        const data: any = await response.json();
-        return data; // Return raw events
-    } catch (error) {
-        console.error("get_active_events error:", error);
-        return [];
-    }
-};
-
-/**
- * Fetches user positions from Gamma API (Real-time)
- */
-// Update to Data API as requested
-// Update to Data API as requested
-export const get_positions = async (userId: string) => {
-    try {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { scwAddress: true, walletAddress: true }
+    // Add primary if it exists
+    if (primaryUrl && !fallbacks.includes(primaryUrl)) {
+        providers.push({
+            provider: new ethers.providers.StaticJsonRpcProvider(primaryUrl, 137), // Explicit ChainId 137
+            priority: 1,
+            weight: 2
         });
-
-        if (!user) return [];
-
-        const addresses: string[] = [];
-        if (user.scwAddress) addresses.push(user.scwAddress);
-        // User requested to ONLY check Proxy wallet, ignoring main wallet
-        // if (user.walletAddress) addresses.push(user.walletAddress);
-
-        console.log(`[get_positions] Fetching for addresses: ${addresses.join(', ')}`);
-
-        const fetchForAddress = async (addr: string) => {
-            try {
-                // Fetch from Data API (as requested by user)
-                const DATA_API_URL = "https://data-api.polymarket.com/positions";
-                const url = `${DATA_API_URL}?user=${addr}&sizeThreshold=0.1&limit=100&sortBy=TOKENS&sortDirection=DESC`;
-
-                const response = await fetch(url, { agent });
-                if (!response.ok) {
-                    console.warn(`[get_positions] Failed for ${addr}: ${response.status}`);
-                    return [];
-                }
-                const data: any = await response.json();
-                return Array.isArray(data) ? data : [];
-            } catch (e) {
-                console.error(`[get_positions] Error for ${addr}:`, e);
-                return [];
-            }
-        };
-
-        const results = await Promise.all(addresses.map(fetchForAddress));
-        const allPositions = results.flat();
-
-        // Deduplicate by asset/conditionId if necessary (though EOA/Proxy hold separate tokens, so technically distinct positions)
-        // But for display, maybe we list them?
-        // Actually, they refer to the same Market, but different holdings. 
-        // Let's return them all, but maybe tag them?
-        // For now, flat list is fine.
-
-        console.log(`[get_positions] Found ${allPositions.length} total positions.`);
-        return allPositions;
-
-    } catch (error) {
-        console.error("get_positions error:", error);
-        return [];
     }
-}
 
-/**
- * Gets the USER's real wallet balance (EOA or Proxy) for display.
- */
-export const get_balance = async (userId: string) => {
-    try {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true, scwOwnerPrivateKey: true, scwAddress: true, balance: true }
+    // Add fallbacks
+    fallbacks.forEach((url, i) => {
+        try {
+            // StaticJsonRpcProvider skips the 'detectNetwork' call which causes the 'noNetwork' error
+            const p = new ethers.providers.StaticJsonRpcProvider(url, 137);
+            providers.push({
+                provider: p,
+                priority: 2 + i,
+                weight: 1
+            });
+        } catch (e) { }
+    });
+
+    if (providers.length === 0) {
+        // Ultimate fallback if everything else fails
+        providers.push({
+            provider: new ethers.providers.StaticJsonRpcProvider("https://polygon-rpc.com", 137),
+            priority: 10,
+            weight: 1
         });
-
-        if (!user || !user.scwOwnerPrivateKey) return { usdc: "0", pol: "0", address: "" };
-
-        const provider = new ethers.providers.JsonRpcProvider(process.env.POLYGON_RPC_URL || "https://polygon-rpc.com");
-
-        // Determine target address (Proxy if available, else EOA)
-        let targetAddress = "";
-
-        if (user.scwAddress) {
-            targetAddress = user.scwAddress;
-        } else {
-            const privateKey = await SecurityService.decrypt(user.scwOwnerPrivateKey, user.id);
-            const wallet = new ethers.Wallet(privateKey, provider);
-            targetAddress = wallet.address;
-        }
-
-        // USDC on Polygon
-        // Check BOTH Native and Bridged just in case
-        const USDC_NATIVE = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";
-        const USDC_BRIDGED = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
-
-        const usdcNative = new ethers.Contract(USDC_NATIVE, ["function balanceOf(address) view returns (uint256)"], provider);
-        const usdcBridged = new ethers.Contract(USDC_BRIDGED, ["function balanceOf(address) view returns (uint256)"], provider);
-
-        const [polBalance, nativeBal, bridgedBal] = await Promise.all([
-            provider.getBalance(targetAddress),
-            usdcNative.balanceOf(targetAddress),
-            usdcBridged.balanceOf(targetAddress)
-        ]);
-
-        // Use total or prefer Native? Polymarket mainly uses Bridged (USDC.e) for now but transitioning?
-        // Actually, Clob usually expects Bridged USDC (6 decimals)
-        // But the user deposit was NATIVE.
-        // We will sum them for display, but note that Clob might only accept one.
-        const totalUSDC = nativeBal.add(bridgedBal);
-
-        return {
-            usdc: ethers.utils.formatUnits(totalUSDC, 6),
-            pol: ethers.utils.formatEther(polBalance),
-            address: targetAddress
-        };
-
-    } catch (error) {
-        console.error("get_balance error:", error);
-        return { usdc: "0", pol: "0", address: "" };
     }
-};
 
-import WebSocket from 'ws';
+    cachedProvider = new ethers.providers.FallbackProvider(providers, 1);
+    return cachedProvider;
+};
 
 // Store original Date.now ONCE to prevent stacking offsets
 const ORIGINAL_DATE_NOW = Date.now.bind(Date);
@@ -275,52 +116,36 @@ const syncTimeWithSDK = async (client: any) => {
 
         if (Math.abs(offset) > 5000) {
             console.log(`[TIME] ⚠️ Adjusting local clock by ${offset}ms`);
-
-            // Deep patch Date constructor to handle `new Date()` calls
             const OriginalDate = Date;
-
             // @ts-ignore
             global.Date = class extends OriginalDate {
                 constructor(...args: any[]) {
                     if (args.length === 0) {
-                        // return new OriginalDate(ORIGINAL_DATE_NOW() + offset);
                         super(ORIGINAL_DATE_NOW() + offset);
                     } else {
                         // @ts-ignore
                         super(...args);
                     }
                 }
-
-                static now() {
-                    return ORIGINAL_DATE_NOW() + offset;
-                }
-
-                // Proxy other static methods
+                static now() { return ORIGINAL_DATE_NOW() + offset; }
                 static parse(s: string) { return OriginalDate.parse(s); }
-                static UTC(...args: any[]) {
-                    // @ts-ignore
-                    return OriginalDate.UTC(...args);
-                }
+                // @ts-ignore
+                static UTC(...args: any[]) { return OriginalDate.UTC(...args); }
             };
-
             console.log(`[TIME] ✅ Clock patched (Deep). New Time: ${new Date().toISOString()}`);
         } else {
             console.log(`[TIME] ✅ Time sync OK (offset < 5s)`);
         }
     } catch (e: any) {
         console.warn("[TIME] SDK sync failed, falling back to manual:", e.message);
-        // Fallback to manual sync if SDK fails
         try {
             const response = await fetch("https://clob.polymarket.com/time", { agent });
             if (response.ok) {
                 const text = await response.text();
                 const serverTimeSec = parseInt(text.replace(/"/g, '').trim());
                 if (!isNaN(serverTimeSec)) {
-                    const serverTimeMs = serverTimeSec * 1000;
-                    const now = ORIGINAL_DATE_NOW();
-                    const offset = serverTimeMs - now;
+                    const offset = (serverTimeSec * 1000) - ORIGINAL_DATE_NOW();
                     if (Math.abs(offset) > 5000) {
-                        // Simple patch for fallback
                         Date.now = () => ORIGINAL_DATE_NOW() + offset;
                         console.log(`[TIME] ✅ Manual sync complete. Offset: ${offset}ms`);
                     }
@@ -341,7 +166,7 @@ const getPriceViaWS = (tokenId: string, side: "BUY" | "SELL"): Promise<number | 
             ws.terminate();
             console.warn(`[WS] Timeout fetching price for ${tokenId}`);
             resolve(null);
-        }, 3000); // 3s timeout
+        }, 3000);
 
         ws.on('open', () => {
             ws.send(JSON.stringify({ assets_ids: [tokenId], type: "market" }));
@@ -353,8 +178,6 @@ const getPriceViaWS = (tokenId: string, side: "BUY" | "SELL"): Promise<number | 
                 const updates = Array.isArray(msg) ? msg : [msg];
                 for (const update of updates) {
                     if (update.event_type === "book" && update.asset_id === tokenId) {
-                        // For BUY, we need Lowest Ask (BestAsk)
-                        // For SELL, we need Highest Bid (BestBid)
                         if (side === "BUY" && update.asks?.length > 0) {
                             const best = update.asks.reduce((p: any, c: any) => parseFloat(c.price) < parseFloat(p.price) ? c : p);
                             clearTimeout(timeout);
@@ -377,559 +200,484 @@ const getPriceViaWS = (tokenId: string, side: "BUY" | "SELL"): Promise<number | 
     });
 };
 
-// Helper: Ensure Proxy has allowance
-const ensureProxyAllowance = async (user: any, eoaWallet: ethers.Wallet, provider: any) => {
-    const { ClobClient, AssetType } = await import("@polymarket/clob-client");
-    try {
-        if (!user.scwAddress) return;
-
-        console.log(`[ALLOWANCE] 🔍 Checking Proxy Allowance...`);
-        const CTF_EXCHANGE = "0x4bfb41d5b3570defd30c3975a9c70d529202fcae";
-        const BRIDGED_USDC = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
-        const usdc = new ethers.Contract(BRIDGED_USDC, ["function allowance(address, address) view returns (uint256)"], provider);
-
-        const allowProxy = await usdc.allowance(user.scwAddress, CTF_EXCHANGE);
-        console.log(`[ALLOWANCE] 🔓 Current: ${ethers.utils.formatUnits(allowProxy, 6)} USDC`);
-
-        if (allowProxy.lt(ethers.utils.parseUnits("1000", 6))) { // < 1000 USDC? Approve.
-            console.log("⚠️ Proxy has insufficient allowance! Enabling trading...");
-
-            const clobClient = new ClobClient(
-                "https://clob.polymarket.com",
-                137,
-                eoaWallet,
-                user.apiKey && user.apiSecret && user.apiPassphrase ? {
-                    key: user.apiKey,
-                    secret: user.apiSecret,
-                    passphrase: user.apiPassphrase
-                } : undefined,
-                2, // SignatureType.POLY_PROXY
-                user.scwAddress
-            );
-
-            await syncTimeWithSDK(clobClient);
-
-            const txHash = await clobClient.updateBalanceAllowance({ asset_type: AssetType.COLLATERAL });
-            console.log("✅ Allowance Updated! Tx:", txHash);
-        } else {
-            console.log(`[ALLOWANCE] ✅ Allowance sufficient.`);
-        }
-    } catch (e: any) {
-        console.warn("[ALLOWANCE] Check failed:", e.message);
+export class PolymarketTool implements MarketTool {
+    getName(): string {
+        return "POLYMARKET";
     }
-};
 
-export const place_trade = async (trade: TradeParams) => {
-    const { ClobClient } = await import("@polymarket/clob-client");
-    let clobClient: any;
-    try {
-        console.log(`[TRADE] 🔵 REQUEST: ${trade.side} ${trade.amount} on ${trade.marketId} for ${trade.userId}`);
-
-        const user = await prisma.user.findUnique({ where: { id: trade.userId } });
-        if (!user || !user.scwOwnerPrivateKey) throw new Error("User or Key not found");
-
-        const provider = new ethers.providers.JsonRpcProvider(process.env.POLYGON_RPC_URL || "https://polygon-rpc.com");
-        const privateKey = await SecurityService.decrypt(user.scwOwnerPrivateKey, user.id);
-        const eoaWallet = new ethers.Wallet(privateKey, provider);
-
-        // Auto-Check Allowance BEFORE trading
-        if (user.scwAddress) {
-            await ensureProxyAllowance(user, eoaWallet, provider);
+    async get_events(limit: number = 20): Promise<any[]> {
+        try {
+            const response = await fetch(`${GAMMA_API_URL}/events?active=true&closed=false&limit=${limit}&order=volume24hr&ascending=false`, { agent });
+            if (!response.ok) throw new Error("Failed to fetch events");
+            const data: any = await response.json();
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error("get_events error:", error);
+            return [];
         }
+    }
 
-        const useProxy = !!user.scwAddress;
-        const proxyAddress = user.scwAddress;
+    async get_markets(limit: number = 20): Promise<Market[]> {
+        try {
+            const response = await fetch(`${GAMMA_API_URL}/markets?active=true&closed=false&limit=${limit}&order=volume24hr&ascending=false`, { agent });
+            if (!response.ok) throw new Error("Failed to fetch markets");
+            const data: any = await response.json();
+            return data.map((m: any) => ({
+                id: m.id,
+                question: m.question,
+                outcome: "Yes",
+                bestBid: m.bestBid,
+                bestAsk: m.bestAsk,
+                volume24hr: m.volume24hr,
+                questionId: m.questionID,
+                conditionId: m.conditionId,
+                tokenIds: m.clobTokenIds
+            }));
+        } catch (error) {
+            console.error("get_markets error:", error);
+            return [];
+        }
+    }
 
+    async search_markets(query: string): Promise<Market[]> {
+        try {
+            const encoded = encodeURIComponent(query);
+            const response = await fetch(`${GAMMA_API_URL}/markets?active=true&closed=false&question=${encoded}&limit=10&order=volume24hr&ascending=false`, { agent });
 
-        console.log(`[TRADE] 🔹 Trading Mode: ${useProxy ? `PROXY (${proxyAddress})` : `EOA (${eoaWallet.address})`}`);
+            if (!response.ok) return [];
+            const data: any = await response.json();
 
-        // Create temp client for time sync and API key operations
-        const tempClient = new ClobClient(
-            "https://clob.polymarket.com",
-            137,
-            eoaWallet
-        );
+            return data.map((m: any) => ({
+                id: m.id,
+                question: m.question,
+                outcome: "Yes",
+                bestBid: m.bestBid,
+                bestAsk: m.bestAsk,
+                volume24hr: m.volume24hr,
+                questionId: m.questionID,
+                conditionId: m.conditionId,
+                tokenIds: m.clobTokenIds
+            }));
+        } catch (error) {
+            console.error("search_markets error:", error);
+            return [];
+        }
+    }
 
-        // Sync Time using SDK method
-        await syncTimeWithSDK(tempClient);
+    async get_positions(userId: string): Promise<Position[] | null> {
+        try {
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { scwAddress: true, walletAddress: true }
+            });
 
-        // Ensure API Keys exist (Create if missing)
-        if (!user.apiKey || !user.apiSecret || !user.apiPassphrase) {
-            console.log(`[TRADE] 🔑 Creating NEW API keys...`);
+            if (!user) return [];
 
-            let keys: any;
-            try {
-                console.log(`[TRADE] 🔑 Attempting to DERIVE existing API keys...`);
-                keys = await tempClient.deriveApiKey();
-            } catch (e: any) {
-                console.warn("[TRADE] Derive failed (caught exception), falling back to CREATE:", e.message);
+            const addresses: string[] = [];
+            if (user.scwAddress) addresses.push(user.scwAddress);
+
+            // Define fetcher with null return (Failure = null)
+            const fetchForAddress = async (addr: string): Promise<any[] | null> => {
+                try {
+                    const DATA_API_URL = "https://data-api.polymarket.com/positions";
+                    const url = `${DATA_API_URL}?user=${addr}&sizeThreshold=0.1&limit=100&sortBy=TOKENS&sortDirection=DESC`;
+
+                    const response = await fetch(url, { agent });
+                    if (!response.ok) return null; // API Failure
+                    const data: any = await response.json();
+                    return Array.isArray(data) ? data : [];
+                } catch (e) {
+                    console.error(`[get_positions] Error for ${addr}:`, e);
+                    return null; // Network Failure
+                }
+            };
+
+            const results = await Promise.all(addresses.map(fetchForAddress));
+
+            // If ANY address failed to fetch, return null to avoid recording a partial (dropped) balance.
+            if (results.some(r => r === null)) {
+                console.warn(`[get_positions] Partial fetch failure for ${userId}. Aborting to prevent data spikes.`);
+                return null;
             }
 
-            // Treat invalid keys (missing key property) as failure too
-            if (!keys || !keys.key) {
-                if (keys && !keys.key) console.warn("[TRADE] Derived keys irrelevant/invalid, falling back to CREATE");
+            // Safe to flatten now that we know all are arrays
+            const allPositions = (results as any[][]).flat();
 
+            return allPositions.map((p: any) => ({
+                id: p.asset || p.conditionId || Math.random().toString(),
+                userId,
+                marketId: p.asset || p.conditionId || "unknown",
+                marketTitle: p.title || "Unknown Market",
+                icon: p.icon,
+                outcome: p.outcome || "YES",
+                shares: Number(p.size || 0),
+                avgEntryPrice: Number(p.avgPrice || 0),
+                initialValue: Number(p.initialValue || 0),
+                exposure: Number(p.currentValue || 0),
+                pnl: Number(p.cashPnl || 0),
+                percentPnl: Number(p.percentPnl || 0),
+                currentPrice: Number(p.curPrice || 0)
+            }));
+
+        } catch (error) {
+            console.error("get_positions error:", error);
+            return null;
+        }
+    }
+
+    async get_balance(userId: string): Promise<Balance | null> {
+        try {
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, scwOwnerPrivateKey: true, scwAddress: true, balance: true }
+            });
+
+            if (!user || !user.scwOwnerPrivateKey) return { usdc: "0", pol: "0", address: "" };
+
+            // Explicitly define RPCs for debugging/fallback
+            const rpcs = [
+                process.env.POLYGON_RPC_URL,
+                "https://polygon.drpc.org",
+                "https://polygon-bor.publicnode.com",
+                "https://polygon-rpc.com",
+                "https://rpc.ankr.com/polygon",
+                "https://1rpc.io/matic"
+            ].filter(Boolean) as string[];
+
+            let lastError: any;
+            let targetAddress = "";
+
+            if (user.scwAddress) {
+                targetAddress = user.scwAddress;
+            } else {
+                const privateKey = await SecurityService.decrypt(user.scwOwnerPrivateKey, user.id);
+                targetAddress = new ethers.Wallet(privateKey).address;
+            }
+
+            const USDC_NATIVE = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";
+            const USDC_BRIDGED = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
+
+            for (const rpcUrl of rpcs) {
                 try {
-                    console.log(`[TRADE] 🔑 Creating NEW API keys...`);
-                    keys = await tempClient.createApiKey();
-                } catch (e) {
-                    console.error("[TRADE] Key creation failed:", e);
-                    throw e;
+                    const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
+                    const usdcNative = new ethers.Contract(USDC_NATIVE, ["function balanceOf(address) view returns (uint256)"], provider);
+                    const usdcBridged = new ethers.Contract(USDC_BRIDGED, ["function balanceOf(address) view returns (uint256)"], provider);
+
+                    const [polBalance, nativeBal, bridgedBal] = await Promise.all([
+                        provider.getBalance(targetAddress),
+                        usdcNative.balanceOf(targetAddress),
+                        usdcBridged.balanceOf(targetAddress)
+                    ]);
+
+                    const totalUSDC = nativeBal.add(bridgedBal);
+
+                    return {
+                        usdc: ethers.utils.formatUnits(totalUSDC, 6),
+                        pol: ethers.utils.formatEther(polBalance),
+                        address: targetAddress
+                    };
+
+                } catch (e: any) {
+                    lastError = e;
+                    continue;
                 }
             }
 
-            if (!keys?.key) throw new Error("Failed to obtain API keys");
+            console.error(`[Balance] All RPCs failed for ${userId}. Last error:`, lastError?.message);
+            return null; // Return null on total failure
 
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { apiKey: keys.key, apiSecret: keys.secret, apiPassphrase: keys.passphras }
-            });
-            user.apiKey = keys.key;
-            user.apiSecret = keys.secret;
-            user.apiPassphrase = keys.passphrase;
+        } catch (fatal: any) {
+            console.error("get_balance fatal error:", fatal);
+            return null;
         }
+    }
 
-        // Initialize Client
-        clobClient = new ClobClient(
-            "https://clob.polymarket.com",
-            137,
-            eoaWallet,
-            {
-                key: user.apiKey || "",
-                secret: user.apiSecret || "",
-                passphrase: user.apiPassphrase || ""
-            },
-            useProxy ? 2 : 0, // 2 for Proxy
-            useProxy ? proxyAddress || undefined : undefined
-        );
+    async place_trade(trade: TradeParams): Promise<{ status: string; txId: string; price: number; settlementPrice?: number }> {
+        let clobClient: any;
+        try {
+            console.log(`[TRADE] 🔵 REQUEST: ${trade.side} ${trade.amount} on ${trade.marketId} for ${trade.userId}`);
 
+            const user = await prisma.user.findUnique({ where: { id: trade.userId } });
+            if (!user || !user.scwOwnerPrivateKey) throw new Error("User or Key not found");
 
-
-        // 2. Resolve Token ID
-        console.log(`[TRADE] Resolving Token ID: ${trade.marketId}`);
-        let assetTokenId: string | null = null;
-
-        // Check if marketId is already the Token ID (long numeric string)
-        if (trade.marketId.length > 50 && !isNaN(Number(trade.marketId[0]))) {
-            assetTokenId = trade.marketId;
-        } else {
-            // Fetch from Gamma logic (Collapsed for brevity, relying on input being TokenID often, but keeping logic)
-            // For modularity, let's assume marketId input IS the Token ID if possible, or resolve it.
-            // Reusing existing resolution logic is safer.
-            try {
-                const url = `${GAMMA_API_URL}/markets/${trade.marketId}`;
-                const marketRes = await fetch(url, { agent });
+            // 1. Resolve Asset Token ID EARLY (Needed for Allowance)
+            let assetTokenId = trade.marketId;
+            // Resolve Token ID if it looks short (Gamma lookup)
+            if (trade.marketId.length < 20) {
+                const marketRes = await fetch(`${GAMMA_API_URL}/markets/${trade.marketId}`, { agent });
                 if (marketRes.ok) {
                     const md: any = await marketRes.json();
                     if (md.clobTokenIds) {
-                        let tids = typeof md.clobTokenIds === 'string' ? JSON.parse(md.clobTokenIds) : md.clobTokenIds;
+                        const tids = typeof md.clobTokenIds === 'string' ? JSON.parse(md.clobTokenIds) : md.clobTokenIds;
                         if (Array.isArray(tids)) {
-                            // Map Yes/No
                             if (trade.outcome.toUpperCase() === "YES" && tids.length > 0) assetTokenId = tids[0];
                             else if (trade.outcome.toUpperCase() === "NO" && tids.length > 1) assetTokenId = tids[1];
                         }
                     }
                 }
-            } catch (e) { }
-        }
+            }
 
-        if (!assetTokenId) assetTokenId = trade.marketId; // Fallback
+            const provider = getMultiProvider();
+            const privateKey = await SecurityService.decrypt(user.scwOwnerPrivateKey, user.id);
+            const eoaWallet = new ethers.Wallet(privateKey, provider);
 
-        // 3. Determine Order Strategy
-        const side = trade.side.toUpperCase() === "BUY" ? "BUY" : "SELL";
+            // Temp client for keys & time
+            const tempClient = new ClobClient("https://clob.polymarket.com", 137, eoaWallet);
+            await syncTimeWithSDK(tempClient);
+            const negRisk = await tempClient.getNegRisk(assetTokenId);
+            const tickSize = await tempClient.getTickSize(assetTokenId);
+            console.log(`[TRADE] ⚙️ Market Config | NegRisk: ${negRisk} | TickSize: ${tickSize}`);
 
-        let finalPrice = trade.price; // Start with provided limit price
-        let orderType = "GTC";        // Default to GTC if price is provided
+            // Generate Keys if missing
+            if (!user.apiKey || !user.apiSecret || !user.apiPassphrase) {
+                let keys = await tempClient.deriveApiKey().catch(() => null);
+                if (!keys || !keys.key) keys = await tempClient.createApiKey();
 
-        // If NO price provided, implies MARKET execution via FOK
-        if (!finalPrice) {
-            console.log(`[TRADE] 🔍 No limit price. Fetching Real-Time ${side} price via WS...`);
-            const wsPrice = await getPriceViaWS(assetTokenId, side as "BUY" | "SELL");
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { apiKey: keys.key, apiSecret: keys.secret, apiPassphrase: keys.passphrase }
+                });
+                user.apiKey = keys.key;
+                user.apiSecret = keys.secret;
+                user.apiPassphrase = keys.passphrase;
+            }
 
-            if (wsPrice) {
-                // Buffer: Buy higher, Sell lower to cross spread
-                const buffer = 0.03;
-                if (side === "BUY") {
-                    finalPrice = Math.min(wsPrice + buffer, 0.99);
-                } else {
-                    finalPrice = Math.max(wsPrice - buffer, 0.02);
+            const creds = { key: user.apiKey!, secret: user.apiSecret!, passphrase: user.apiPassphrase! };
+
+            // Auto-Check Allowance (USDC / COLLATERAL)
+            if (user.scwAddress) {
+                const CTF_EXCHANGE = "0x4bfb41d5b3570defd30c3975a9c70d529202fcae";
+                const BRIDGED_USDC = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
+                const usdc = new ethers.Contract(BRIDGED_USDC, ["function allowance(address, address) view returns (uint256)"], provider);
+                const allowProxy = await usdc.allowance(user.scwAddress, CTF_EXCHANGE);
+                if (allowProxy.lt(ethers.utils.parseUnits("1000", 6))) {
+                    console.log("⚠️ Proxy has insufficient USDC allowance! Enabling trading...");
+                    const allowClient = new ClobClient("https://clob.polymarket.com", 137, eoaWallet, creds, 2, user.scwAddress);
+                    await allowClient.updateBalanceAllowance({ asset_type: AssetType.COLLATERAL });
                 }
-                finalPrice = Math.floor(finalPrice * 100) / 100; // Round to 2 decimals
-                orderType = "FOK";
-                console.log(`[TRADE] ⚡ Real-Time Price: ${wsPrice} -> FOK Limit: ${finalPrice}`);
-            } else {
-                console.warn("[TRADE] ⚠️ WS Price unavailable. Fallback to default.");
-                finalPrice = 0.50; // Dangerous fallback? Or just fail? 
-                // Existing code used 0.50 default. keeping it safe or erroring?
-                // Let's keep it but ideally we should error if market order fails.
+
+                // Check CTF Approval for SELLING
+                if (trade.side.toUpperCase() === "SELL") {
+                    const CTF_CONTRACT = "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045";
+                    const ctf = new ethers.Contract(CTF_CONTRACT, ["function isApprovedForAll(address, address) view returns (bool)"], provider);
+                    const isApproved = await ctf.isApprovedForAll(user.scwAddress, CTF_EXCHANGE);
+
+                    if (!isApproved) {
+                        console.log("⚠️ Proxy has insufficient CTF allowance for Selling! Enabling...");
+                        const allowClient = new ClobClient("https://clob.polymarket.com", 137, eoaWallet, creds, 2, user.scwAddress);
+                        console.log(`[ALLOWANCE] ⚠️ Enabling CTF Allowance for Token: ${assetTokenId}`);
+                        try {
+                            const allowRes = await allowClient.updateBalanceAllowance({ asset_type: AssetType.CONDITIONAL, token_id: assetTokenId });
+                            console.log("[ALLOWANCE] Result:", JSON.stringify(allowRes));
+                        } catch (err: any) {
+                            console.error("[ALLOWANCE] ❌ Update Failed:", err.message);
+                        }
+
+                        // Wait for propagation
+                        // Wait for propagation (Shortened to match script velocity)
+                        console.log("⏳ Allowance updated. Waiting 3s for propagation...");
+                        await new Promise(r => setTimeout(r, 3000));
+                    }
+                }
             }
+
+            const useProxy = !!user.scwAddress;
+            const proxyAddress = user.scwAddress;
+
+            clobClient = new ClobClient(
+                "https://clob.polymarket.com",
+                137,
+                eoaWallet,
+                creds,
+                useProxy ? 2 : 0,
+                useProxy ? proxyAddress! : undefined
+            );
+
+            const side = trade.side.toUpperCase() === "BUY" ? "BUY" : "SELL";
+            let finalPrice = trade.price;
+            let orderType = trade.price ? "GTC" : "FOK";
+
+            if (!finalPrice) {
+                const wsPrice = await getPriceViaWS(assetTokenId, side as "BUY" | "SELL");
+                if (wsPrice) {
+                    const buffer = 0.03;
+                    finalPrice = side === "BUY" ? Math.min(wsPrice + buffer, 0.99) : Math.max(wsPrice - buffer, 0.02);
+                    finalPrice = Math.floor(finalPrice * 100) / 100;
+                } else {
+                    finalPrice = 0.50; // Fallback
+                }
+            }
+
+            // Adjust Price to Tick Size
+            if (tickSize && !isNaN(parseFloat(tickSize))) {
+                // Calculate decimals from string "0.01" -> 2
+                const parts = tickSize.split('.');
+                const decimals = (parts.length > 1 && parts[1]) ? parts[1].length : 0;
+                const multiplier = Math.pow(10, decimals);
+                finalPrice = Math.floor(finalPrice * multiplier) / multiplier;
+                console.log(`[TRADE] 🏷️ Price configured to ${decimals} decimals: ${finalPrice}`);
+            }
+
+            let quantity = parseFloat(trade.amount.toString());
+
+            // Quantity Logic:
+            // BUY: 'amount' is USDC Budget. Quantity = Budget / Price
+            // SELL: 'amount' is Share Count. Quantity = Amount (Fractional allowed)
+            if (trade.side.toUpperCase() === "BUY" && trade.amount && finalPrice > 0) {
+                quantity = Math.floor(trade.amount / finalPrice);
+            } else if (trade.side.toUpperCase() === "SELL") {
+                // Sells can be fractional (0.5 shares), don't floor yet. 
+                // Precision rounding happens later.
+                quantity = parseFloat(trade.amount.toString());
+            }
+
+            // Sanity Check
+            if (quantity <= 0) {
+                // Throw error so frontend catches it and shows "Failed" toast
+                throw new Error(`[TRADE] Quantity calculated to 0. Amount: ${trade.amount}, Price: ${finalPrice}`);
+            }
+
+            // Precision: Round to 2 decimals (Match test-sell.js)
+            quantity = Math.floor(quantity * 100) / 100;
+
+            console.log(`[TRADE] 🚀 Placing ${orderType} ${side} Order: ${quantity} contracts @ ${finalPrice}`);
+
+            const order = await clobClient.createOrder({
+                tokenID: assetTokenId,
+                price: finalPrice.toString(),
+                side: side,
+                size: quantity.toString(),
+                feeRateBps: 0,
+                expiration: 0,
+                nonce: 0
+            }, { negRisk: true });
+
+            const postResp = await clobClient.postOrder(order, orderType === "FOK" ? "FOK" : "GTC");
+            if (!postResp.success && !postResp.orderID) throw new Error(postResp.errorMsg || "Order Failed");
+
+            return {
+                status: "FILLED",
+                txId: postResp.orderID || postResp.transactionHash,
+                price: finalPrice,
+                settlementPrice: finalPrice
+            };
+
+        } catch (error: any) {
+            console.error("Trade failed:", error?.message || error);
+            throw error;
         }
+    }
 
-        const size = trade.amount.toString(); // API takes raw size? 
-        // Wait, trade.amount is in USDC? 
-        // Existing code: size: trade.amount.toString().
-        // If trade.amount is USDC, we need to convert to SHARES (Amount / Price).
-        // If trade.amount IS Shares, then correct.
-        // Interface says "amount: number; // Amount in USDC".
-        // The previous code did NOT divide by price. This is a BUG in original code if it meant USDC.
-        // But if it meant Shares, it's fine.
-        // Given `test-buy.js` logic: size = amountUSDC / price.
-        // I should fix this calculation if input is USDC.
-        // "Amount in USDC" comment in interface strongly suggests USDC.
-        // The previous code did NOT divide by price. This is a BUG in original code if it meant USDC.
-
-        let quantity = parseFloat(size);
-        if (trade.amount && finalPrice && finalPrice > 0) {
-            // Calculate Shares (Strictly integer to satisfy Maker Amount precision rules)
-            quantity = Math.floor(trade.amount / finalPrice);
-        }
-
-        console.log(`[TRADE] 🚀 Placing ${orderType} ${side} Order: ${quantity} shares @ ${finalPrice}`);
-
-        // 4. Dynamic Params Fetching
-        let tickSize = "0.01";
-        let negRisk = false; // Default false
-
+    async get_trades(userId: string): Promise<TradeHistory[]> {
         try {
-            console.log(`[TRADE] 🔍 Fetching dynamic params for ${assetTokenId}...`);
-            // Dynamic Fetch: Tick Size
-            // @ts-ignore
-            const ts = await clobClient.getTickSize(assetTokenId!);
-            if (ts?.minimum_tick_size) {
-                tickSize = ts.minimum_tick_size.toString();
-            } else if (typeof ts === 'string') { // Handle string return if simple type
-                tickSize = ts;
-            }
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { walletAddress: true, scwAddress: true }
+            });
+            if (!user) return [];
 
-            // Dynamic Fetch: Neg Risk
-            // @ts-ignore
-            negRisk = await clobClient.getNegRisk(assetTokenId!);
+            const DATA_API_URL = "https://data-api.polymarket.com/trades";
+            const addresses: string[] = [];
+            if (user.scwAddress) addresses.push(user.scwAddress);
+            else if (user.walletAddress) addresses.push(user.walletAddress);
 
-            console.log(`[TRADE] ✅ Params fetched: TickSize=${tickSize}, NegRisk=${negRisk}`);
-        } catch (e: any) {
-            console.warn(`[TRADE] ⚠️ Failed to fetch dynamic params: ${e.message}. Using defaults.`);
-        }
-
-        const order = await clobClient.createOrder({
-            tokenID: assetTokenId!,
-            price: finalPrice!.toString(),
-            side: side,
-            size: quantity.toString(),
-            feeRateBps: 0,
-            expiration: 0,
-            nonce: 0
-        }, { tickSize, negRisk }); // Use dynamic negRisk
-
-        console.log(`[TRADE] 📝 Signing Order:`, JSON.stringify(order));
-        console.log(`[TRADE] 📝 Clob Config: ChainId=137, SigType=${useProxy ? 2 : 0}, Proxy=${proxyAddress}`);
-
-        const postResp = await clobClient.postOrder(order, orderType === "FOK" ? "FOK" : "GTC");
-
-        console.log(`[TRADE] Response:`, JSON.stringify(postResp));
-
-        if (!postResp.success && !postResp.orderID) {
-            throw new Error(postResp.errorMsg || "Order Failed");
-        }
-
-        return {
-            status: "FILLED",
-            txId: postResp.orderID || postResp.transactionHash,
-            price: finalPrice,
-            settlementPrice: finalPrice
-        };
-
-    } catch (error: any) {
-        console.error("Trade failed:", error?.message || error);
-        throw error;
-    }
-};
-
-/**
- * Fetches trade history from Polymarket Data API (Gamma)
- * Uses public API which is more reliable for historical display than CLOB
- */
-export const get_trades = async (userId: string) => {
-    try {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { walletAddress: true, scwAddress: true }
-        });
-
-        if (!user || (!user.scwAddress && !user.walletAddress)) return [];
-
-        const DATA_API_URL = "https://data-api.polymarket.com/trades";
-
-        // User requested ONLY proxy wallet history
-        const addresses: string[] = [];
-        if (user.scwAddress) addresses.push(user.scwAddress);
-        else if (user.walletAddress) addresses.push(user.walletAddress); // Fallback if no proxy
-
-        const fetchForAddress = async (addr: string) => {
-            try {
-                // limit=50, takerOnly=false (User reported missing Sells, might be Maker trades)
+            const fetchForAddress = async (addr: string) => {
                 const response = await fetch(`${DATA_API_URL}?user=${addr}&limit=100&takerOnly=false`, { agent });
-                if (!response.ok) return [];
-                const data: any = await response.json();
-                return Array.isArray(data) ? data : [];
-            } catch (e) {
-                console.error(`Failed to fetch trades for ${addr}`, e);
-                return [];
-            }
-        };
+                return response.ok ? await response.json() : [];
+            };
 
-        const results = await Promise.all(addresses.map(fetchForAddress));
+            const results = await Promise.all(addresses.map(fetchForAddress));
+            const allTrades = results.flat().map((t: any) => ({
+                id: t.transactionHash,
+                market: t.title || "Unknown Market",
+                asset_id: t.asset,
+                side: t.side,
+                size: t.size,
+                price: t.price,
+                timestamp: t.timestamp,
+                outcome: t.outcome,
+                transactionHash: t.transactionHash,
+                icon: t.icon
+            }));
 
-        // Flatten, Deduplicate by txHash, and Sort by Timestamp desc
-        const allTrades = results.flat();
-        const uniqueTrades = Array.from(new Map(allTrades.map((t: any) => [t.transactionHash || Math.random(), t])).values());
-
-        // Sort descending
-        uniqueTrades.sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
-
-        // Map to simpler format if needed, or return raw. 
-        // Frontend expects: market, side, size, price, value (calculated)
-        // Data API returns: title, outcome, side, size, price
-        return uniqueTrades.map((t: any) => ({
-            id: t.transactionHash,
-            market: t.title || "Unknown Market", // Richer data!
-            asset_id: t.asset,
-            side: t.side,
-            size: t.size,
-            price: t.price,
-            timestamp: t.timestamp,
-            outcome: t.outcome,
-            transactionHash: t.transactionHash,
-            icon: t.icon // Pass icon to frontend
-        })); // Close map and return
-
-    } catch (error) {
-        console.error("get_trades error:", error);
-        return [];
+            return allTrades;
+        } catch (error) {
+            console.error("get_trades error:", error);
+            return [];
+        }
     }
+}
+
+export const polymarketTool = new PolymarketTool();
+
+// Legacy Exports - Restoring missing functions specific to Polymarket
+export const get_markets = (limit?: number) => polymarketTool.get_markets(limit);
+export const search_markets = (query: string) => polymarketTool.search_markets(query);
+export const get_positions = (userId: string) => polymarketTool.get_positions(userId);
+export const get_balance = (userId: string) => polymarketTool.get_balance(userId);
+export const place_trade = (trade: TradeParams) => polymarketTool.place_trade(trade);
+export const get_trades = (userId: string) => polymarketTool.get_trades(userId);
+
+// Restored: get_active_events (Now correctly fetches /events for grouped markets)
+export const get_active_events = async (limit: number = 20) => {
+    return polymarketTool.get_events(limit);
 };
 
-/**
- * Fetches trade history for a specific wallet address from Polymarket Data API
- */
+// Restored: get_trades_by_address (Direct API call, bypassing DB User check if needed, or helper)
 export const get_trades_by_address = async (address: string) => {
     try {
         const DATA_API_URL = "https://data-api.polymarket.com/trades";
-
         const response = await fetch(`${DATA_API_URL}?user=${address}&limit=100&takerOnly=false`, { agent });
         if (!response.ok) return [];
         const data: any = await response.json();
-        const trades = Array.isArray(data) ? data : [];
-
-        // Return mapped format
-        return trades.map((t: any) => ({
-            id: t.transactionHash || Math.random(),
-            market: t.title || "Unknown Market",
-            asset_id: t.asset,
-            side: t.side,
-            size: t.size,
-            price: t.price,
-            timestamp: t.timestamp,
-            outcome: t.outcome,
-            transactionHash: t.transactionHash,
-            icon: t.icon
-        }));
-
-    } catch (error) {
-        console.error("get_trades_by_address error:", error);
+        return Array.isArray(data) ? data.map((t: any) => ({
+            ...t,
+            outcome: t.outcome || "YES", // normalizing
+            market: t.title
+        })) : [];
+    } catch (e) {
+        console.error("get_trades_by_address error", e);
         return [];
     }
 };
 
-/**
- * Fetches active positions for a specific wallet address from Polymarket Data API
- */
+// Restored: get_positions_by_address
 export const get_positions_by_address = async (address: string) => {
     try {
         const DATA_API_URL = "https://data-api.polymarket.com/positions";
-
-        // Use sizeThreshold to filter dust, and robust params matching get_positions
         const url = `${DATA_API_URL}?user=${address}&sizeThreshold=0.1&limit=100&sortBy=TOKENS&sortDirection=DESC`;
-        console.log(`[WalletWatch] Fetching positions for ${address} via ${url}`);
-
         const response = await fetch(url, { agent });
-        if (!response.ok) {
-            console.error(`[WalletWatch] Failed to fetch positions: ${response.status} ${response.statusText}`);
-            return [];
-        }
+        if (!response.ok) return [];
         const data: any = await response.json();
-        const positions = Array.isArray(data) ? data : [];
-        console.log(`[WalletWatch] Found ${positions.length} positions for ${address}`);
-
-        // Map using keys observed in PortfolioService + standard Data API fields
-        // Data API fields: asset, title, size, curPrice, cashPnl, initialValue, currentValue
-        return positions.map((p: any) => ({
-            asset: p.asset,
-            title: p.title,
-            market: p.market,
-            outcome: p.outcome,
-            size: Number(p.size || 0),
-            value: Number(p.currentValue || p.value || 0), // Use currentValue if available (PortfolioService uses it)
-            price: Number(p.curPrice || p.price || 0),
-            initialValue: Number(p.initialValue || 0),
-            pnl: Number(p.cashPnl || 0),
-            icon: p.icon
-        }));
-
-    } catch (error) {
-        console.error("get_positions_by_address error:", error);
+        return Array.isArray(data) ? data : [];
+    } catch (e) {
+        console.error("get_positions_by_address error", e);
         return [];
     }
 };
 
-
-
-/**
- * Closes a position by placing a SELL order for the full size.
- * Bypasses place_trade "USDC amount" logic to ensure exact share selling.
- */
-export const close_position = async (userId: string, marketId: string, outcome: string) => {
+// Restored: close_position (Specific logic often required separate handling)
+export const close_position = async (userId: string, position: any) => {
     try {
-        console.log(`[CLOSE] 🔴 REQUEST: Closing position for ${userId}`);
-        console.log(`[CLOSE] 🔍 Params: MarketId=${marketId}, Outcome=${outcome}`);
+        console.log(`[CLOSE] Closing position for ${position.marketTitle}`);
 
-        // 1. Get current position size from Data API
-        const positions = await get_positions(userId);
-        console.log(`[CLOSE] 📥 Fetched ${positions.length} active positions for user.`);
+        // Safe Price: 5% below market (for SELL) to ensure fill, but floored at 0.01
+        let safePrice = Number(position.currentPrice) * 0.95;
+        if (safePrice < 0.01) safePrice = 0.01; // Clamp to min tick
+        if (safePrice > 0.99) safePrice = 0.99; // Clamp to max tick
 
-        // Find matching position. Markets mapped from 'asset' or 'conditionId'
-        const position = positions.find((p: any) =>
-            p.asset === marketId ||
-            p.conditionId === marketId
-        );
-
-        if (!position) {
-            console.error(`[CLOSE] ❌ Position NOT FOUND for MarketId: ${marketId}`);
-            console.log(`[CLOSE] Available Assets:`, positions.map((p: any) => p.asset).join(", "));
-            throw new Error("Position not found or already closed");
-        }
-
-        console.log(`[CLOSE] ✅ Found Position: ${position.asset} (${position.size} shares)`);
-
-        const size = Number(position.size);
-        if (size <= 0) throw new Error("Position size is 0");
-
-        // 2. Initialize Client
-        const { ClobClient } = await import("@polymarket/clob-client");
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (!user) throw new Error("User not found");
-
-        const provider = new ethers.providers.JsonRpcProvider(process.env.POLYGON_RPC_URL || "https://polygon-rpc.com");
-        const privateKey = await SecurityService.decrypt(user.scwOwnerPrivateKey!, user.id);
-        const signer = new ethers.Wallet(privateKey, provider);
-        const eoaWallet = signer;
-
-        // Create temp client for time sync
-        const tempClient = new ClobClient(
-            "https://clob.polymarket.com",
-            137,
-            eoaWallet
-        );
-
-        await syncTimeWithSDK(tempClient);
-
-        // Check keys
-        if (!user.apiKey || !user.apiPassphrase || !user.apiSecret) {
-            throw new Error("API Keys missing. Please invoke regular trade first to generate keys.");
-        }
-
-        // Determine Proxy vs EOA
-        const useProxy = !!user.scwAddress;
-        const proxyAddress = user.scwAddress;
-
-        console.log(`[CLOSE] 🔹 Trading Mode: ${useProxy ? `PROXY (${proxyAddress})` : `EOA (${eoaWallet.address})`}`);
-
-        // Initialize Client (Type as ANY to avoid lib mismatches, matching place_trade)
-        const clobClient: any = new ClobClient(
-            "https://clob.polymarket.com",
-            137,
-            eoaWallet,
-            {
-                key: user.apiKey,
-                secret: user.apiSecret,
-                passphrase: user.apiPassphrase
-            },
-            useProxy ? 2 : 0, // 2 for Proxy
-            useProxy ? proxyAddress || undefined : undefined
-        );
-
-        // 4. Get Price for FOK
-        const assetTokenId = position.asset; // This IS the token ID
-        const wsPrice = await getPriceViaWS(assetTokenId, "SELL");
-
-        // Sell slightly lower to cross spread.
-        let finalPrice = 0.02; // Default fallback if no WS price
-        if (wsPrice) {
-            // If we have a real market price (Best Bid), use it.
-            // Ideally we undercut by a tick to ensure fill, but for FOK at Best Bid it should suffice if size exists.
-            // If the price is very low (e.g. 0.005), we MUST use that or lower.
-            finalPrice = wsPrice;
-
-            // If price suggests we can undercut safely (e.g. > 5 cents), do it.
-            if (finalPrice > 0.05) {
-                finalPrice = finalPrice - 0.01;
-            }
-        }
-
-        console.log(`[CLOSE] 📉 Selling ${size} shares @ ${finalPrice} (FOK) | WS Price: ${wsPrice}`);
-
-        // 5. Dynamic Params Fetching
-        let tickSize = "0.01";
-        let negRisk = false;
-
-        try {
-            console.log(`[CLOSE] 🔍 Fetching dynamic params for ${assetTokenId}...`);
-            // Dynamic Fetch: Tick Size
-            // @ts-ignore
-            const ts = await clobClient.getTickSize(assetTokenId!);
-            if (ts?.minimum_tick_size) {
-                tickSize = ts.minimum_tick_size.toString();
-                console.log(`[CLOSE] 📏 Fetched Tick Size: ${tickSize}`);
-            }
-
-            // Dynamic Fetch: Neg Risk
-            const market = await clobClient.getMarket(assetTokenId!);
-            if (market && (market.negRisk || market.neg_risk)) {
-                negRisk = true;
-                console.log(`[CLOSE] ⚠️ Market is Negative Risk`);
-            }
-        } catch (e) { console.warn("[CLOSE] Failed to fetch dynamic params, using defaults"); }
-
-        // FIX: Round inputs to prevent "NaN" or "Decimal" errors in ClobClient
-        // Floor price to 2 decimals (standard tick) or matches tick size
-        const decimals = (tickSize.split('.')[1] || "00").length || 2;
-        const safePrice = parseFloat(finalPrice.toFixed(decimals));
-        const safeSize = parseFloat(size.toFixed(4)); // Cap decimals for safety
-
-        console.log(`[CLOSE] 🛠️ Sanitized: Price ${safePrice} (Tick ${tickSize}, NegRisk ${negRisk}), Size ${safeSize}`);
-
-        const order = await clobClient.createOrder({
-            tokenID: assetTokenId,
-            price: safePrice.toString(),
+        // Pass SHARES directly for SELL. logic in place_trade handles it.
+        return polymarketTool.place_trade({
+            userId,
+            marketId: position.marketId || position.asset_id,
+            outcome: position.outcome,
             side: "SELL",
-            size: safeSize.toString(),
-            feeRateBps: 0,
-            expiration: 0,
-            nonce: 0,
-            tickSize // Pass specifically
-        }, { tickSize, negRisk: negRisk }); // Use dynamic negRisk
-
-        const postResp = await clobClient.postOrder(order, "FOK"); // FOK guarantees fill or kill
-        console.log(`[CLOSE] Response:`, JSON.stringify(postResp));
-
-        if (!postResp.success && !postResp.orderID) {
-            console.error(`[CLOSE] ❌ Post Order Failed: ${postResp.errorMsg}`);
-            throw new Error(postResp.errorMsg || "Close Failed");
-        }
-
-        return { success: true, txId: postResp.orderID };
-
-    } catch (e: any) {
-        console.error("close_position failed:", e);
+            amount: Number(position.shares), // Direct Share Count
+            price: Number(safePrice.toFixed(2))
+        });
+    } catch (e) {
+        console.error("close_position error", e);
         throw e;
     }
 };

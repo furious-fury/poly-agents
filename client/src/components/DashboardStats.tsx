@@ -11,26 +11,31 @@ interface StatCardProps {
     loading?: boolean;
 }
 
-function StatCard({ title, value, icon: Icon, subValue, subColor = "text-green-500", loading }: StatCardProps) {
+function StatCard({ title, value, icon: Icon, subValue, subColor = "text-emerald-600", loading }: StatCardProps) {
     return (
-        <div className="bg-panel shadow-accent shadow-2xl rounded-xl p-5 hover:border-accent/30 transition-all duration-300 group my-8">
-            <div className="flex justify-between items-start my-4">
-                <div className="p-3 bg-accent/10 rounded-lg group-hover:bg-accent/20 transition-colors">
-                    <Icon className="w-6 h-6 text-accent" />
+        <div className="bg-white border border-gray-100 shadow-card rounded-4xl p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+            {/* Soft decorative background gradient */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-blue-50 to-transparent rounded-bl-[4rem] opacity-50 group-hover:opacity-100 transition-opacity" />
+
+            <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                    <div className="p-3 bg-blue-50 rounded-2xl group-hover:scale-105 transition-transform">
+                        <Icon className="w-6 h-6 text-blue-600" />
+                    </div>
+                    {subValue && (
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${subColor}`}>
+                            {subValue}
+                        </span>
+                    )}
                 </div>
-                {subValue && (
-                    <span className={`text-xs font-semibold px-2 py-1 rounded bg-black/30 ${subColor}`}>
-                        {subValue}
-                    </span>
-                )}
-            </div>
-            <div>
-                <h3 className="text-text-secondary text-sm font-medium mb-1">{title}</h3>
-                {loading ? (
-                    <Skeleton className="h-8 w-24 bg-muted" />
-                ) : (
-                    <p className="text-2xl font-bold text-text-primary tracking-tight">{value}</p>
-                )}
+                <div>
+                    <h3 className="text-gray-500 text-sm font-medium mb-1 pl-1">{title}</h3>
+                    {loading ? (
+                        <Skeleton className="h-8 w-24 bg-gray-100 rounded-lg" />
+                    ) : (
+                        <p className="text-3xl font-bold text-gray-900 tracking-tight">{value}</p>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -50,19 +55,20 @@ export default function DashboardStats({ userId }: { userId: string | null }) {
     if (!userId) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 bg-panel/50 rounded-xl" />)}
+                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-40 bg-gray-100 rounded-2xl" />)}
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <StatCard
                 title="Cash Balance"
                 value={`$${balance}`}
                 icon={Wallet}
                 loading={balanceLoading}
                 subValue="USDC"
+                subColor="text-blue-600 bg-blue-50"
             />
             <StatCard
                 title="Active Agents"
@@ -71,19 +77,19 @@ export default function DashboardStats({ userId }: { userId: string | null }) {
                 loading={agentsLoading}
             />
             <StatCard
-                title="PnL"
+                title="PnL (24h)"
                 value={dailyPnL}
                 icon={TrendingUp}
                 loading={false}
                 subValue="Coming Soon"
-                subColor="text-gray-500"
+                subColor="text-gray-500 bg-gray-100"
             />
             <StatCard
                 title="Running Jobs"
                 value={runningJobs}
                 icon={Activity}
                 loading={agentsLoading}
-                subColor="text-blue-400"
+                subColor="text-emerald-600 bg-emerald-50"
                 subValue={runningJobs > 0 ? "Active" : "Idle"}
             />
         </div>

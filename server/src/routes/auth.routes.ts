@@ -33,9 +33,9 @@ authRouter.post("/login", async (req, res) => {
             const { generateSystemPrompt } = await import("../agents/prompts.js");
 
             const defaults = [
-                { name: "Conservative Agent", risk: "LOW" as const, sl: 20.0, tp: 100.0 },
-                { name: "Balanced Agent", risk: "MEDIUM" as const, sl: 30.0, tp: 200.0 },
-                { name: "Aggressive Agent", risk: "HIGH" as const, sl: 50.0, tp: 500.0 }
+                { name: "Safe Agent", risk: "LOW" as const, sl: 20.0, tp: 100.0 },
+                { name: "Standard Agent", risk: "MEDIUM" as const, sl: 30.0, tp: 200.0 },
+                { name: "Risky Agent", risk: "HIGH" as const, sl: 50.0, tp: 500.0 }
             ];
 
             for (const def of defaults) {
@@ -43,9 +43,9 @@ authRouter.post("/login", async (req, res) => {
                     data: {
                         userId: user.id,
                         name: def.name,
-                        description: "Athena Created",
+                        description: "Default Agent",
                         riskProfile: def.risk,
-                        systemPrompt: generateSystemPrompt(def.name, "Athena Created", def.risk),
+                        systemPrompt: generateSystemPrompt(def.name, "Default Agent", def.risk),
                         llmProvider: "OPENAI", // Default to OpenAI
                         llmModel: "gpt-4o-mini", // Cost efficient default
                         pollingInterval: 120, // 2 minutes

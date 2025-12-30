@@ -1,5 +1,5 @@
 import { Side } from "../generated/prisma/client.js";
-import { place_trade } from "../tools/polymarket.js"; // make sure path is correct
+import { getMarketTool } from "../tools/MarketAdapter.js";
 import { PortfolioService } from "./PortfolioService.js";
 
 export interface TradeRequest {
@@ -19,8 +19,8 @@ export const TradeService = {
     async executeAgentTrade(job: TradeRequest) {
         const { userId, agentId, marketId, marketQuestion, outcome, side, amount } = job;
 
-        // Execute trade using your Polymarket tool
-        const tradeResult = await place_trade({
+        // Execute trade using Active Tool
+        const tradeResult = await getMarketTool().place_trade({
             userId,
             agentId,
             marketId,

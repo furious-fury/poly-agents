@@ -28,8 +28,14 @@ export const useControlAgent = () => {
             if (!res.ok) throw new Error(`Failed to ${action} agent`);
             return res.json();
         },
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["agents"] });
+            // Invalidate positions/trades too, as starting/stopping/running an agent might affect them (or trigger an immediate trade)
+            if (variables.userId) {
+                queryClient.invalidateQueries({ queryKey: ["positions", variables.userId] });
+                queryClient.invalidateQueries({ queryKey: ["trades", variables.userId] });
+                queryClient.invalidateQueries({ queryKey: ["balance", variables.userId] });
+            }
         },
     });
 };
@@ -113,7 +119,7 @@ export const useTrades = (userId: string) => {
             return data.trades; // Extract trades array from response
         },
         enabled: !!userId,
-        refetchInterval: 5000,
+        refetchInterval: 60000,
     });
 };
 
@@ -144,7 +150,7 @@ export const useAgentLogs = (agentId: string) => {
             return data.logs;
         },
         enabled: !!agentId,
-        refetchInterval: 5000, // Auto-refresh every 5s
+        refetchInterval: 10000, // Auto-refresh every 10s
     });
 };
 
@@ -157,7 +163,7 @@ export const useUserLogs = (userId: string) => {
             return data.logs;
         },
         enabled: !!userId,
-        refetchInterval: 5000,
+        refetchInterval: 60000,
     });
 };
 
@@ -233,7 +239,7 @@ export const useProxyWallet = (userId: string) => {
             return res.json();
         },
         enabled: !!userId,
-        refetchInterval: 30000,
+        refetchInterval: 60000,
     });
 };
 
@@ -250,7 +256,7 @@ export const useUserPositions = (userId: string) => {
         enabled: !!userId,
         // count 0 shares as closed, so we might want to filter them out here or in UI
         select: (positions: any[]) => positions.filter((p: any) => p.shares > 0),
-        refetchInterval: 5000,
+        refetchInterval: 60000,
     });
 };
 
@@ -264,7 +270,7 @@ export const useUserActivity = (userId: string) => {
             return data.activities || [];
         },
         enabled: !!userId,
-        refetchInterval: 5000,
+        refetchInterval: 60000,
     });
 };
 
@@ -278,15 +284,15 @@ export const useUserBalance = (userId: string) => {
             return data.balance || { usdc: "0", pol: "0", address: "" };
         },
         enabled: !!userId,
-        refetchInterval: 5000,
+        refetchInterval: 60000,
     });
 };
 
-export const usePortfolioHistory = (userId: string) => {
+export const usePortfolioHistory = (userId: string, range: '24h' | '1w' | '1m' = '24h') => {
     return useQuery({
-        queryKey: ["portfolioHistory", userId],
+        queryKey: ["portfolioHistory", userId, range],
         queryFn: async () => {
-            const res = await fetch(`${API_URL}/portfolio/history/${userId}`);
+            const res = await fetch(`${API_URL}/portfolio/history/${userId}?range=${range}`);
             if (!res.ok) throw new Error("Failed to fetch history");
             const data = await res.json();
             return data.history || [];
@@ -348,6 +354,17 @@ export const useClosePosition = () => {
             return data;
         },
         onSuccess: (_, variables) => {
+            // Optimistic Update: Remove the position from cache immediately
+            // This prevents the UI from "flickering" or showing the old position while the indexer catches up
+            queryClient.setQueryData(['positions', variables.userId], (old: any[]) => {
+                if (!old) return [];
+                // Filter out by marketId (or asset_id as fallback)
+                return old.filter((p: any) => {
+                    const id = p.marketId || p.asset_id;
+                    return id !== variables.marketId;
+                });
+            });
+
             // Invalidate all relevant queries to trigger immediate UI update
             queryClient.invalidateQueries({ queryKey: ['positions', variables.userId] });
             queryClient.invalidateQueries({ queryKey: ['trades', variables.userId] });

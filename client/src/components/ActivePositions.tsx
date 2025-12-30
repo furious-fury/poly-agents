@@ -80,20 +80,20 @@ export default function ActivePositions({ userId, className }: ActivePositionsPr
     };
 
     return (
-        <Card className={`bg-panel border-transparent p-6 overflow-hidden flex flex-col ${className || 'h-[400px]'}`}>
+        <Card className={`bg-white border border-gray-100 shadow-card p-6 overflow-hidden flex flex-col ${className || 'h-[400px]'} rounded-4xl`}>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="bg-[#1c1f26] border-white/10 text-white">
+                <DialogContent className="bg-white border-gray-100 text-gray-900 shadow-2xl rounded-3xl">
                     <DialogHeader>
-                        <DialogTitle>Confirm Sale</DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to CLOSE your <span className="text-white font-bold">{selectedPosition?.outcome}</span> position on market <span className="text-white font-bold">{selectedPosition?.marketTitle || selectedPosition?.marketId}</span>?
+                        <DialogTitle className="text-xl font-bold">Confirm Sale</DialogTitle>
+                        <DialogDescription className="text-gray-500">
+                            Are you sure you want to CLOSE your <span className="text-gray-900 font-bold">{selectedPosition?.outcome}</span> position on market <span className="text-gray-900 font-bold">{selectedPosition?.marketTitle || selectedPosition?.marketId}</span>?
                             <br /><br />
                             This will sell all shares immediately at the best available market price.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="hover:bg-white/5 hover:text-white text-text-secondary">Cancel</Button>
-                        <Button onClick={handleClosePosition} className="bg-red-500 hover:bg-red-600 text-white border-0">
+                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="hover:bg-gray-50 hover:text-gray-900 text-gray-500 rounded-xl">Cancel</Button>
+                        <Button onClick={handleClosePosition} className="bg-red-500 hover:bg-red-600 text-white border-0 font-bold rounded-xl shadow-lg shadow-red-500/20">
                             Confirm Sell
                         </Button>
                     </DialogFooter>
@@ -102,28 +102,28 @@ export default function ActivePositions({ userId, className }: ActivePositionsPr
 
             <div className="flex justify-between items-center mb-6 shrink-0">
                 <div>
-                    <h3 className="text-lg font-bold text-white">Portfolio Activity</h3>
-                    <p className="text-text-secondary text-sm">Manage predictions and view history.</p>
+                    <h3 className="text-lg font-bold text-gray-900">Portfolio Activity</h3>
+                    <p className="text-gray-500 text-sm">Manage predictions and view history.</p>
                 </div>
-                <div className="flex gap-2 bg-black/20 p-1 rounded-lg">
+                <div className="flex gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
                     <button
                         onClick={() => setTab("positions")}
-                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${tab === "positions"
-                            ? "bg-white/10 text-white shadow-sm"
-                            : "text-text-secondary hover:text-white"
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${tab === "positions"
+                            ? "bg-white text-blue-600 shadow-sm"
+                            : "text-gray-500 hover:text-gray-700"
                             }`}
                     >
-                        <Activity className="w-3 h-3" />
+                        <Activity className="w-3.5 h-3.5" />
                         Active Positions
                     </button>
                     <button
                         onClick={() => setTab("history")}
-                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${tab === "history"
-                            ? "bg-white/10 text-white shadow-sm"
-                            : "text-text-secondary hover:text-white"
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${tab === "history"
+                            ? "bg-white text-blue-600 shadow-sm"
+                            : "text-gray-500 hover:text-gray-700"
                             }`}
                     >
-                        <History className="w-3 h-3" />
+                        <History className="w-3.5 h-3.5" />
                         Trade History
                     </button>
                 </div>
@@ -134,19 +134,19 @@ export default function ActivePositions({ userId, className }: ActivePositionsPr
             ) : (
                 <>
                     {isLoading && (
-                        <div className="flex-1 flex items-center justify-center text-text-secondary">
+                        <div className="flex-1 flex items-center justify-center text-gray-400">
                             Loading positions...
                         </div>
                     )}
 
                     {isEmpty && (
                         <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 py-12">
-                            <div className="p-4 bg-white/5 rounded-full ring-1 ring-white/10">
-                                <Ghost size={32} className="text-gray-500" />
+                            <div className="p-4 bg-gray-50 rounded-full border border-gray-100">
+                                <Ghost size={32} className="text-gray-300" />
                             </div>
                             <div>
-                                <h4 className="text-white font-medium">No active open positions</h4>
-                                <p className="text-sm text-text-secondary max-w-xs mx-auto mt-1">
+                                <h4 className="text-gray-900 font-bold">No active open positions</h4>
+                                <p className="text-sm text-gray-500 max-w-xs mx-auto mt-1">
                                     Your active trades will appear here. Start trading to build your portfolio.
                                 </p>
                             </div>
@@ -154,16 +154,16 @@ export default function ActivePositions({ userId, className }: ActivePositionsPr
                     )}
 
                     {!isLoading && !isEmpty && (
-                        <div className="overflow-y-auto custom-scrollbar flex-1 -mr-2 pr-2 min-h-0">
+                        <div className="overflow-y-auto custom-scrollbar flex-1 -mr-2 pr-2 min-h-0 rounded-2xl border border-gray-100 bg-gray-50/30">
                             <Table>
-                                <TableHeader className="sticky top-0 bg-[#0f1115] z-10">
-                                    <TableRow className="border-none hover:bg-transparent text-[10px] uppercase tracking-wider text-text-secondary font-medium">
-                                        <TableHead className="pl-4 w-[40%]">Market</TableHead>
-                                        <TableHead className="text-right">Avg <span className="text-gray-600">→</span> Now</TableHead>
-                                        <TableHead className="text-right">Bet</TableHead>
-                                        <TableHead className="text-right">To Win</TableHead>
-                                        <TableHead className="text-right">Value</TableHead>
-                                        <TableHead className="w-[120px]"></TableHead>
+                                <TableHeader className="sticky top-0 bg-white/90 backdrop-blur-md z-10 shadow-sm">
+                                    <TableRow className="border-b border-gray-100 hover:bg-transparent text-[10px] uppercase tracking-wider text-gray-500 font-bold">
+                                        <TableHead className="pl-6 w-[40%] py-4">Market</TableHead>
+                                        <TableHead className="text-right py-4">Avg <span className="text-gray-400">→</span> Now</TableHead>
+                                        <TableHead className="text-right py-4">Bet</TableHead>
+                                        <TableHead className="text-right py-4">To Win</TableHead>
+                                        <TableHead className="text-right py-4">Value</TableHead>
+                                        <TableHead className="w-[120px] py-4"></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -172,30 +172,30 @@ export default function ActivePositions({ userId, className }: ActivePositionsPr
                                         const toWin = pos.shares * 1.0; // Max payout if outcome occurs
 
                                         return (
-                                            <TableRow key={pos.id} className="border-none even:bg-white/5 hover:bg-white/10 transition-colors group">
+                                            <TableRow key={pos.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors group">
                                                 {/* MARKET */}
-                                                <TableCell className="pl-4 py-3 align-top">
+                                                <TableCell className="pl-6 py-4 align-top">
                                                     <div className="flex gap-3">
                                                         {/* Icon */}
-                                                        <div className="w-10 h-10 rounded-md bg-white/10 overflow-hidden shrink-0 mt-0.5">
+                                                        <div className="w-10 h-10 rounded-xl bg-white overflow-hidden shrink-0 mt-0.5 border border-gray-100 shadow-sm">
                                                             {pos.icon ? (
                                                                 <img src={pos.icon} alt="" className="w-full h-full object-cover" />
                                                             ) : (
-                                                                <div className="w-full h-full flex items-center justify-center text-xs text-secondary">?</div>
+                                                                <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 font-bold">?</div>
                                                             )}
                                                         </div>
 
                                                         {/* Details */}
                                                         <div className="flex flex-col gap-1 min-w-0">
-                                                            <p className="text-white font-medium text-sm truncate leading-tight pr-4" title={pos.marketTitle}>
+                                                            <p className="text-gray-900 font-bold text-sm truncate leading-tight pr-4" title={pos.marketTitle}>
                                                                 {pos.marketTitle}
                                                             </p>
                                                             <div className="flex items-center gap-2 text-xs">
-                                                                <span className={`px-1.5 py-0.5 rounded font-bold ${pos.outcome?.toUpperCase() === 'YES' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                                                                <span className={`px-1.5 py-0.5 rounded font-bold ${pos.outcome?.toUpperCase() === 'YES' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'
                                                                     }`}>
                                                                     {pos.outcome} {pos.currentPrice?.toFixed(2)}¢
                                                                 </span>
-                                                                <span className="text-text-secondary">
+                                                                <span className="text-gray-500 font-medium">
                                                                     {pos.shares} shares
                                                                 </span>
                                                             </div>
@@ -204,42 +204,42 @@ export default function ActivePositions({ userId, className }: ActivePositionsPr
                                                 </TableCell>
 
                                                 {/* AVG -> NOW */}
-                                                <TableCell className="text-right font-mono text-sm py-3 align-top">
-                                                    <div className="flex items-center justify-end gap-1.5 mt-1">
+                                                <TableCell className="text-right font-mono text-sm py-4 align-top">
+                                                    <div className="flex items-center justify-end gap-1.5 mt-1 font-medium">
                                                         <span className="text-gray-400">{(pos.avgEntryPrice * 100).toFixed(1)}¢</span>
-                                                        <span className="text-gray-600">→</span>
-                                                        <span className="text-white font-bold">{(pos.currentPrice * 100).toFixed(1)}¢</span>
+                                                        <span className="text-gray-300">→</span>
+                                                        <span className="text-gray-900 font-bold">{(pos.currentPrice * 100).toFixed(1)}¢</span>
                                                     </div>
                                                 </TableCell>
 
                                                 {/* BET (Initial Value) */}
-                                                <TableCell className="text-right py-3 align-top">
-                                                    <p className="text-gray-300 font-mono text-sm mt-1">
+                                                <TableCell className="text-right py-4 align-top">
+                                                    <p className="text-gray-500 font-mono text-sm mt-1 font-medium">
                                                         ${pos.initialValue?.toFixed(2) || "0.00"}
                                                     </p>
                                                 </TableCell>
 
                                                 {/* TO WIN (Max Payout) */}
-                                                <TableCell className="text-right py-3 align-top">
-                                                    <p className="text-gray-300 font-mono text-sm mt-1">
+                                                <TableCell className="text-right py-4 align-top">
+                                                    <p className="text-emerald-600 font-mono text-sm mt-1 font-bold">
                                                         ${toWin.toFixed(2)}
                                                     </p>
                                                 </TableCell>
 
                                                 {/* VALUE (Current + PnL) */}
-                                                <TableCell className="text-right py-3 align-top">
+                                                <TableCell className="text-right py-4 align-top">
                                                     <div className="flex flex-col items-end gap-0.5">
-                                                        <span className="text-white font-bold font-mono text-sm">
+                                                        <span className="text-gray-900 font-bold font-mono text-sm">
                                                             ${pos.exposure?.toFixed(2) || "0.00"}
                                                         </span>
-                                                        <span className={`text-xs font-mono whitespace-nowrap ${isProfit ? "text-emerald-400" : "text-red-400"}`}>
+                                                        <span className={`text-xs font-mono whitespace-nowrap font-bold ${isProfit ? "text-emerald-600" : "text-red-500"}`}>
                                                             {isProfit ? "+" : ""}{pos.pnl?.toFixed(2)} ({pos.percentPnl?.toFixed(2)}%)
                                                         </span>
                                                     </div>
                                                 </TableCell>
 
                                                 {/* ACTIONS */}
-                                                <TableCell className="text-right pr-4 py-3 align-middle">
+                                                <TableCell className="text-right pr-6 py-4 align-middle">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <PnLCard data={{
                                                             marketTitle: pos.marketTitle,
@@ -252,7 +252,7 @@ export default function ActivePositions({ userId, className }: ActivePositionsPr
                                                         <button
                                                             onClick={() => confirmClose(pos)}
                                                             disabled={!!closingId}
-                                                            className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
                                                         >
                                                             {closingId === pos.marketId ? (
                                                                 <Activity className="w-4 h-4 animate-spin" />

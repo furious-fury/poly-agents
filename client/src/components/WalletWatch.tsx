@@ -189,53 +189,50 @@ export function WalletWatch({ userId }: WalletWatchProps) {
     };
 
     return (
-        <div className="space-y-6">
-            <header>
-                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-purple-500">
-                    Wallet Watcher
-                </h2>
-                <p className="text-gray-400">Track external whale wallets and their Polymarket moves.</p>
-            </header>
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div>
+                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Wallet Watcher</h2>
+                <p className="text-gray-500 mt-2">Track external whales and smart money movements in real-time.</p>
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Sidebar: Wallet List */}
-                <div className="bg-panel rounded-2xl border border-white/10 p-4 h-[600px] flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-semibold text-gray-300">Tracked Wallets</h3>
-
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[800px]">
+                {/* Sidebar - Watchlist */}
+                <div className="lg:col-span-1 bg-white rounded-4xl border border-gray-100 shadow-card flex flex-col overflow-hidden">
+                    <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                        <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Watchlist</h3>
                         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button size="sm" variant="outline" className="h-8 gap-1 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 hover:text-blue-300 border-blue-500/30 hover:border-blue-500/50 transition-all">
-                                    <Plus size={14} /> Add Wallet
+                                <Button size="sm" variant="outline" className="h-8 gap-1 bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-100 transition-all rounded-xl">
+                                    <Plus size={14} /> Add
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="bg-[#1C1C21] border-white/10 text-white sm:max-w-md">
+                            <DialogContent className="bg-white border-gray-100 text-gray-900 sm:max-w-[400px] shadow-2xl rounded-3xl">
                                 <DialogHeader>
-                                    <DialogTitle>Track New Wallet</DialogTitle>
-                                    <DialogDescription className="text-gray-400">
+                                    <DialogTitle className="text-xl font-bold">Track New Wallet</DialogTitle>
+                                    <DialogDescription className="text-gray-500">
                                         Enter a wallet address to monitor its Polymarket activity.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 py-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-400">Wallet Name (Optional)</label>
+                                        <label className="text-sm font-bold text-gray-700">Wallet Name (Optional)</label>
                                         <Input
                                             value={newWalletName}
                                             onChange={(e) => setNewWalletName(e.target.value)}
                                             placeholder="e.g. Whale 1"
-                                            className="bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-blue-500"
+                                            className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 rounded-xl"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-400">Wallet Address</label>
+                                        <label className="text-sm font-bold text-gray-700">Wallet Address</label>
                                         <Input
                                             value={newWallet}
                                             onChange={(e) => setNewWallet(e.target.value)}
                                             placeholder="0x..."
-                                            className="bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-blue-500 font-mono"
+                                            className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 font-mono rounded-xl"
                                         />
                                     </div>
-                                    <Button onClick={addWallet} disabled={isLoading || !newWallet || newWallet.length < 10} className="w-full bg-blue-600 hover:bg-blue-500 text-white">
+                                    <Button onClick={addWallet} disabled={isLoading || !newWallet || newWallet.length < 10} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl h-11 shadow-lg shadow-blue-500/20">
                                         {isLoading ? "Adding..." : "Start Tracking"}
                                     </Button>
                                 </div>
@@ -244,33 +241,35 @@ export function WalletWatch({ userId }: WalletWatchProps) {
                     </div>
 
                     {/* List */}
-                    <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                    <div className="flex-1 overflow-y-auto space-y-2 p-3">
                         {wallets.map(w => (
                             <div
                                 key={w.address}
                                 onClick={() => setSelectedWallet(w.address)}
-                                className={`p-3 rounded-xl cursor-pointer border transition-all flex justify-between items-center group
-                                    ${selectedWallet === w.address ? 'bg-blue-500/10 border-blue-500/50' : 'bg-white/5 border-transparent hover:bg-white/10'}
+                                className={`p-4 rounded-2xl cursor-pointer border transition-all flex justify-between items-center group
+                                    ${selectedWallet === w.address
+                                        ? 'bg-blue-50 border-blue-200 shadow-sm'
+                                        : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-100'}
                                 `}
                             >
                                 <div className="truncate">
-                                    <div className={`font-medium text-sm ${selectedWallet === w.address ? 'text-blue-400' : 'text-gray-200'}`}>
+                                    <div className={`font-bold text-sm ${selectedWallet === w.address ? 'text-blue-900' : 'text-gray-700 group-hover:text-gray-900'}`}>
                                         {w.name || "Untitled"}
                                     </div>
-                                    <div className="text-xs font-mono text-gray-500">
+                                    <div className={`text-xs font-mono mt-1 ${selectedWallet === w.address ? 'text-blue-600' : 'text-gray-400'}`}>
                                         {w.address.slice(0, 6)}...{w.address.slice(-4)}
                                     </div>
                                 </div>
                                 <button
                                     onClick={(e) => initiateRemoveWallet(w.address, e)}
-                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 hover:text-red-400 rounded transition-all"
+                                    className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-50 text-gray-300 hover:text-red-500 rounded-xl transition-all"
                                 >
-                                    <Trash2 size={14} />
+                                    <Trash2 size={16} />
                                 </button>
                             </div>
                         ))}
                         {wallets.length === 0 && (
-                            <div className="text-center text-gray-600 text-sm py-10">
+                            <div className="text-center text-gray-400 text-sm py-10 italic">
                                 No wallets tracked.
                             </div>
                         )}
@@ -278,18 +277,18 @@ export function WalletWatch({ userId }: WalletWatchProps) {
 
                     {/* Delete Confirmation Dialog */}
                     <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                        <DialogContent className="bg-[#1C1C21] border-white/10 text-white sm:max-w-[400px]">
+                        <DialogContent className="bg-white border-gray-100 text-gray-900 sm:max-w-[400px] shadow-2xl rounded-3xl">
                             <DialogHeader>
-                                <DialogTitle>Stop Tracking Wallet?</DialogTitle>
-                                <DialogDescription className="text-gray-400">
+                                <DialogTitle className="text-xl font-bold text-red-600">Stop Tracking Wallet?</DialogTitle>
+                                <DialogDescription className="text-gray-500">
                                     Are you sure you want to remove this wallet from your tracking list?
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="flex gap-3 justify-end mt-4">
-                                <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="hover:bg-white/10 text-gray-400 hover:text-white">
+                                <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="hover:bg-gray-50 text-gray-500 hover:text-gray-900 rounded-xl">
                                     Cancel
                                 </Button>
-                                <Button variant="destructive" onClick={confirmDelete} className="bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 border border-red-500/20">
+                                <Button variant="destructive" onClick={confirmDelete} className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-100 rounded-xl font-bold shadow-none">
                                     Remove Wallet
                                 </Button>
                             </div>
@@ -298,100 +297,101 @@ export function WalletWatch({ userId }: WalletWatchProps) {
                 </div>
 
                 {/* Main: Trade History */}
-                <div className="lg:col-span-3 bg-panel rounded-2xl border border-white/10 p-6 flex flex-col h-[600px]">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold flex items-center gap-2">
-                            {selectedWallet ? (
-                                <>
-                                    <span className="font-mono text-blue-400 text-base">
-                                        {wallets.find(w => w.address === selectedWallet)?.name ||
-                                            `${selectedWallet.slice(0, 6)}...${selectedWallet.slice(-6)}`}
-                                    </span>
-                                    {wallets.find(w => w.address === selectedWallet)?.name && (
-                                        <span className="text-xs text-gray-500 font-mono">
-                                            ({selectedWallet.slice(0, 4)}...{selectedWallet.slice(-4)})
+                <div className="lg:col-span-3 bg-white rounded-4xl border border-gray-100 shadow-card p-6 flex flex-col h-[800px] overflow-hidden relative">
+                    <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-6">
+                        <div>
+                            <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                                {selectedWallet ? (
+                                    <>
+                                        <span>
+                                            {wallets.find(w => w.address === selectedWallet)?.name ||
+                                                `${selectedWallet.slice(0, 6)}...${selectedWallet.slice(-6)}`}
                                         </span>
-                                    )}
-                                    <a href={`https://polyscan.com/address/${selectedWallet}`} target="_blank" className="text-gray-500 hover:text-white">
-                                        <ExternalLink size={14} />
-                                    </a>
-                                </>
-                            ) : "Select a wallet"}
-                        </h3>
-                        <div className="flex gap-2">
-                            <div className="flex bg-black/40 p-1 rounded-lg border border-white/10">
-                                <button
-                                    onClick={() => setViewMode("positions")}
-                                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${viewMode === "positions" ? "bg-blue-500/20 text-blue-400" : "text-gray-500 hover:text-gray-300"}`}
-                                >
-                                    Active Positions
-                                </button>
-                                <button
-                                    onClick={() => setViewMode("history")}
-                                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${viewMode === "history" ? "bg-blue-500/20 text-blue-400" : "text-gray-500 hover:text-gray-300"}`}
-                                >
-                                    Trade History
-                                </button>
-                            </div>
+                                        <a href={`https://polyscan.com/address/${selectedWallet}`} target="_blank" className="text-gray-300 hover:text-blue-500 transition-colors">
+                                            <ExternalLink size={20} />
+                                        </a>
+                                    </>
+                                ) : "Select a wallet"}
+                            </h3>
+                            {selectedWallet && (
+                                <p className="text-gray-500 font-mono text-sm mt-1">{selectedWallet}</p>
+                            )}
+                        </div>
+                        <div className="flex gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+                            <button
+                                onClick={() => setViewMode("positions")}
+                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${viewMode === "positions" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                            >
+                                Active Positions
+                            </button>
+                            <button
+                                onClick={() => setViewMode("history")}
+                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${viewMode === "history" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                            >
+                                Trade History
+                            </button>
                         </div>
                     </div>
 
                     {isDataLoading ? (
-                        <div className="flex-1 flex items-center justify-center text-gray-500">
-                            <span className="animate-pulse">Scanning chain data...</span>
+                        <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
+                            <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
+                            <span className="font-medium text-sm">Scanning chain data...</span>
                         </div>
                     ) : viewMode === "history" ? (
-                        <div className="flex-1 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-100 bg-gray-50/30">
                             <table className="w-full text-left border-collapse">
-                                <thead className="sticky top-0 bg-[#0F0F12]/95 backdrop-blur-sm z-10">
-                                    <tr className="text-gray-500 text-xs uppercase border-b border-white/5">
-                                        <th className="pb-3 pl-2">Time</th>
-                                        <th className="pb-3">Market</th>
-                                        <th className="pb-3 text-center">Type</th>
-                                        <th className="pb-3 text-right">Size</th>
-                                        <th className="pb-3 text-right">Price</th>
-                                        <th className="pb-3 text-right pr-2">Tx</th>
+                                <thead className="sticky top-0 bg-white/90 backdrop-blur-md z-10 shadow-sm">
+                                    <tr className="text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
+                                        <th className="py-4 pl-6">Time</th>
+                                        <th className="py-4">Market</th>
+                                        <th className="py-4 text-center">Type</th>
+                                        <th className="py-4 text-right">Size</th>
+                                        <th className="py-4 text-right">Price</th>
+                                        <th className="py-4 text-right pr-6">Tx</th>
                                     </tr>
                                 </thead>
-                                <tbody className="text-sm">
+                                <tbody className="text-sm bg-white divide-y divide-gray-50">
                                     {trades.map((t) => (
-                                        <tr key={t.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
-                                            <td className="py-3 pl-2 text-gray-400 w-24">
-                                                {new Date(t.timestamp * 1000).toLocaleDateString()}
-                                                <div className="text-xs text-gray-600">
+                                        <tr key={t.id} className="hover:bg-blue-50/30 transition-colors group">
+                                            <td className="py-4 pl-6 text-gray-500 w-32">
+                                                <div className="font-mono text-xs font-bold text-gray-900">
+                                                    {new Date(t.timestamp * 1000).toLocaleDateString()}
+                                                </div>
+                                                <div className="text-[10px] text-gray-400 font-mono mt-0.5">
                                                     {new Date(t.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
                                             </td>
-                                            <td className="py-3 max-w-[200px]">
+                                            <td className="py-4 max-w-[200px]">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-md bg-white/10 overflow-hidden shrink-0">
-                                                        {t.icon ? <img src={t.icon} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-500">?</div>}
+                                                    <div className="w-10 h-10 rounded-xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 shadow-sm">
+                                                        {t.icon ? <img src={t.icon} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 font-bold">?</div>}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <div className="truncate font-medium text-gray-200" title={t.market}>{t.market}</div>
-                                                        <div className={`text-xs font-bold ${t.outcome === 'YES' ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                        <div className="truncate font-semibold text-gray-900 text-sm" title={t.market}>{t.market}</div>
+                                                        <div className={`text-[10px] font-bold mt-0.5 inline-block px-1.5 py-0.5 rounded ${t.outcome === 'YES' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                                                             {t.outcome}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${t.side === 'BUY' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                                            <td className="py-4 text-center">
+                                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${t.side === 'BUY' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'
                                                     }`}>
                                                     {t.side}
                                                 </span>
                                             </td>
-                                            <td className="py-3 text-right font-mono text-gray-300">
+                                            <td className="py-4 text-right font-mono text-gray-600 font-medium">
                                                 {parseFloat(t.size).toLocaleString()}
                                             </td>
-                                            <td className="py-3 text-right font-mono text-yellow-500">
+                                            <td className="py-4 text-right font-mono text-gray-900 font-bold">
                                                 {parseFloat(t.price).toFixed(2)}¢
                                             </td>
-                                            <td className="py-3 text-right pr-2">
+                                            <td className="py-4 text-right pr-6">
                                                 <a
                                                     href={`https://polygonscan.com/tx/${t.transactionHash}`}
                                                     target="_blank"
-                                                    className="text-blue-500 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="text-blue-600 hover:text-blue-700 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 px-3 py-1.5 rounded-lg"
                                                 >
                                                     View
                                                 </a>
@@ -400,7 +400,7 @@ export function WalletWatch({ userId }: WalletWatchProps) {
                                     ))}
                                     {trades.length === 0 && selectedWallet && (
                                         <tr>
-                                            <td colSpan={6} className="text-center py-20 text-gray-600">
+                                            <td colSpan={6} className="text-center py-20 text-gray-400 italic">
                                                 No trade history found.
                                             </td>
                                         </tr>
@@ -409,52 +409,52 @@ export function WalletWatch({ userId }: WalletWatchProps) {
                             </table>
                         </div>
                     ) : (
-                        <div className="flex-1 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-100 bg-gray-50/30">
                             <table className="w-full text-left border-collapse">
-                                <thead className="sticky top-0 bg-[#0F0F12]/95 backdrop-blur-sm z-10">
-                                    <tr className="text-gray-500 text-xs uppercase border-b border-white/5">
-                                        <th className="pb-3 pl-2">Market</th>
-                                        <th className="pb-3 text-right">Size</th>
-                                        <th className="pb-3 text-right">Value</th>
-                                        <th className="pb-3 text-right">Price</th>
-                                        <th className="pb-3 text-right pr-2">PnL</th>
-                                        <th className="pb-3 text-right w-[50px]"></th>
+                                <thead className="sticky top-0 bg-white/90 backdrop-blur-md z-10 shadow-sm">
+                                    <tr className="text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
+                                        <th className="py-4 pl-6">Market</th>
+                                        <th className="py-4 text-right">Size</th>
+                                        <th className="py-4 text-right">Value</th>
+                                        <th className="py-4 text-right">Price</th>
+                                        <th className="py-4 text-right pr-2">PnL</th>
+                                        <th className="py-4 text-right w-[50px]"></th>
                                     </tr>
                                 </thead>
-                                <tbody className="text-sm">
+                                <tbody className="text-sm bg-white divide-y divide-gray-50">
                                     {positions.map((p, i) => (
-                                        <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                                            <td className="py-3 pl-2 max-w-[240px]">
+                                        <tr key={i} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
+                                            <td className="py-4 pl-6 max-w-[240px]">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-md bg-white/10 overflow-hidden shrink-0">
-                                                        {p.icon ? <img src={p.icon} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-500">?</div>}
+                                                    <div className="w-10 h-10 rounded-xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 shadow-sm">
+                                                        {p.icon ? <img src={p.icon} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 font-bold">?</div>}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <div className="truncate font-medium text-gray-200" title={p.title}>{p.title}</div>
-                                                        <div className={`text-xs font-bold ${p.outcome === 'YES' ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                        <div className="truncate font-semibold text-gray-900 text-sm" title={p.title}>{p.title}</div>
+                                                        <div className={`text-[10px] font-bold mt-0.5 inline-block px-1.5 py-0.5 rounded ${p.outcome === 'YES' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                                                             {p.outcome}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-3 text-right font-mono text-gray-300">
+                                            <td className="py-4 text-right font-mono text-gray-600 font-medium">
                                                 {p.size.toLocaleString()}
                                             </td>
-                                            <td className="py-3 text-right font-mono text-gray-200">
+                                            <td className="py-4 text-right font-mono text-gray-900 font-bold">
                                                 ${p.value.toFixed(2)}
                                             </td>
-                                            <td className="py-3 text-right font-mono text-yellow-500">
+                                            <td className="py-4 text-right font-mono text-gray-600">
                                                 {(p.price * 100).toFixed(1)}¢
                                             </td>
-                                            <td className={`py-3 text-right pr-2 font-mono ${p.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                            <td className={`py-4 text-right pr-2 font-mono font-bold ${p.pnl >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                                 <div className="flex flex-col items-end">
                                                     <span>{p.pnl >= 0 ? '+' : '-'}${Math.abs(p.pnl).toFixed(2)}</span>
-                                                    <span className="text-xs opacity-70">
+                                                    <span className="text-[10px] opacity-70 font-medium">
                                                         ({p.initialValue > 0 ? ((p.pnl / p.initialValue) * 100).toFixed(1) : '0.0'}%)
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 text-right pr-2">
+                                            <td className="py-4 text-right pr-6">
                                                 <PnLCard data={{
                                                     marketTitle: p.title,
                                                     outcome: p.outcome,
@@ -468,7 +468,7 @@ export function WalletWatch({ userId }: WalletWatchProps) {
                                     ))}
                                     {positions.length === 0 && selectedWallet && (
                                         <tr>
-                                            <td colSpan={5} className="text-center py-20 text-gray-600">
+                                            <td colSpan={6} className="text-center py-20 text-gray-400 italic">
                                                 No active positions.
                                             </td>
                                         </tr>

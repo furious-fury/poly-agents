@@ -18,7 +18,7 @@ export default function GlobalActivityFeed({ userId }: GlobalActivityFeedProps) 
 
     if (isLoading) {
         return (
-            <div className="h-[600px] w-full rounded-md bg-panel p-4 overflow-hidden">
+            <div className="max-h-[700px] w-full rounded-md bg-panel p-4 overflow-hidden">
                 <div className="space-y-4 animate-pulse">
                     {[...Array(6)].map((_, i) => (
                         <div key={i} className="flex items-start gap-4 p-3">
@@ -53,18 +53,19 @@ export default function GlobalActivityFeed({ userId }: GlobalActivityFeedProps) 
 
     const getBadgeStyle = (type: string) => {
         switch (type) {
-            case "TRADE": return "bg-green-500/20 text-green-500 hover:bg-green-500/30 border-green-500/50";
-            case "RISK_BLOCK": return "bg-orange-500/20 text-orange-500 hover:bg-orange-500/30 border-orange-500/50";
-            case "ERROR": return "bg-red-500/20 text-red-500 hover:bg-red-500/30 border-red-500/50";
-            case "DECISION": return "bg-blue-500/20 text-blue-500 hover:bg-blue-500/30 border-blue-500/50";
-            case "ANALYSIS": return "bg-purple-500/20 text-purple-500 hover:bg-purple-500/30 border-purple-500/50";
-            case "DATA_FETCH": return "bg-cyan-500/20 text-cyan-500 hover:bg-cyan-500/30 border-cyan-500/50";
-            default: return "bg-slate-500/20 text-slate-400 hover:bg-slate-500/30 border-slate-500/50";
+            case "TRADE": return "bg-green-100 text-green-700 border-green-200 shadow-sm";
+            case "RISK_BLOCK": return "bg-orange-100 text-orange-700 border-orange-200 shadow-sm";
+            case "ERROR": return "bg-red-100 text-red-700 border-red-200 shadow-sm";
+            case "DECISION": return "bg-blue-100 text-blue-700 border-blue-200 shadow-sm";
+            case "ANALYSIS": return "bg-purple-100 text-purple-700 border-purple-200 shadow-sm";
+            case "DATA_FETCH": return "bg-cyan-100 text-cyan-700 border-cyan-200 shadow-sm";
+            case "RISK_ASSESSMENT": return "bg-emerald-100 text-emerald-700 border-emerald-200 shadow-sm";
+            default: return "bg-gray-100 text-gray-600 border-gray-200 shadow-sm";
         }
     }
 
     return (
-        <ScrollArea className="h-[600px] w-full rounded-md bg-panel p-4">
+        <ScrollArea className="custom-height w-full rounded-4xl bg-white border border-gray-100 shadow-card p-2">
             <div className="space-y-4">
                 {logs?.map((log: any) => {
                     const cleanMessage = log.message.replace(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})\s*/u, "");
@@ -74,7 +75,7 @@ export default function GlobalActivityFeed({ userId }: GlobalActivityFeedProps) 
                     return (
                         <div
                             key={log.id}
-                            className="p-3 rounded-lg hover:bg-hover transition-colors border border-transparent hover:border-border/50 group cursor-pointer"
+                            className="p-3 my-4 rounded-xl hover:bg-gray-200/50 transition-colors border border-transparent hover:border-border/50 group cursor-pointer"
                             onClick={() => setExpandedLog(isExpanded ? null : log.id)}
                         >
                             <div className="flex items-start gap-4">

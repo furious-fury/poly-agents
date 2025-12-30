@@ -27,7 +27,21 @@ if (!delegationPrivateKey) {
     throw new Error("DELEGATION_PRIVATE_KEY not set in environment variables");
 }
 
-const provider = new ethers.providers.JsonRpcProvider("https://polygon-rpc.com");
+// Initialize robust provider (Fallback)
+const rpcUrls = [
+    process.env.POLYGON_RPC_URL,
+    "https://polygon.drpc.org",
+    "https://rpc.ankr.com/polygon",
+    "https://polygon-bor.publicnode.com"
+].filter(Boolean) as string[];
+
+const providers = rpcUrls.map((url, i) => ({
+    provider: new ethers.providers.StaticJsonRpcProvider(url, 137),
+    priority: i + 1,
+    weight: 1
+}));
+
+const provider = new ethers.providers.FallbackProvider(providers, 1);
 const wallet = new ethers.Wallet(delegationPrivateKey, provider);
 
 // Initialize CLOB client with L2 proxy wallet delegation

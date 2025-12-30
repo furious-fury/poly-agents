@@ -10,56 +10,46 @@
     --color-white: #ffffff;
     --color-black: #000000;
 
-    /* Dark neutrals */
-    --color-bg: #0e0e11;
-    /* Primary background */
-    /* #18181d */
-    --color-surface: #1d2b3a;
-    /* Cards, panels */
-    --color-elevated: #141d27;
-    /* Popovers, modals */
-    --color-border: #2a2a31;
-    /* Subtle separators */
-    --color-muted: #6a6a77;
-    /* Muted text/icons */
-    --color-text: #e5e5ec;
-    /* Main foreground text */
+    /* Theme: Modern Light Premium (Landing Page Vibe) */
+    --color-main: #F9FAFB;
+    /* Gray-50 (Soft Background) */
+    --color-panel: #FFFFFF;
+    /* White (Cards) */
 
-    /* Accent color (your #ffb320) */
-    --color-accent: #ffb320;
-    --color-accent-soft: #ffd98a;
-    --color-accent-strong: #e09a18;
+    /* Text */
+    --color-text-primary: #111827;
+    /* Gray-900 (High Contrast) */
+    --color-text-secondary: #4B5563;
+    /* Gray-600 (Softer) */
+    --color-text-muted: #9CA3AF;
+    /* Gray-400 */
 
-    /* Supporting hues for depth */
-    --color-blue-dark: #1b2b40;
-    --color-purple-deep: #2a1f3d;
-    --color-emerald-dark: #0f3d33;
-
-
-
-
-    /* theme for the ui  */
-    --color-main: #0C0E12;
-    --color-panel: #14171C;
-    --color-hover: #1A1D23;
-
-    --color-border: #1F2329;
-
-    --color-text-primary: #E5E7EB;
-    --color-text-secondary: #9CA3AF;
-
-    /* Accent color (Electric Blue – used in the UI mockup) */
-    --color-accent: #3A7BFF;
+    /* Brand Primary: Electric Blue */
+    --color-accent: #2563EB;
+    /* Blue-600 */
+    --color-accent-soft: #3B82F6;
+    /* Blue-500 */
+    --color-accent-strong: #1D4ED8;
+    /* Blue-700 */
+    --color-accent-bg: #EFF6FF;
+    /* Blue-50 */
 
     /* Functional colors */
-    --color-success: #0ECB81;
-    --color-danger: #FF4D4F;
-    --color-warning: #FACC15;
+    --color-success: #10B981;
+    --color-danger: #EF4444;
+    --color-warning: #F59E0B;
+    --color-info: #3B82F6;
 
-    /* Glow / subtle effects */
-    --color-accent-glow: rgba(58, 123, 255, 0.15);
-    --color-success-glow: rgba(14, 203, 129, 0.15);
-    --color-danger-glow: rgba(255, 77, 79, 0.15);
+    /* Borders */
+    --color-border: #F3F4F6;
+    /* Gray-100 (Subtle) */
+    --color-border-hover: #E5E7EB;
+    /* Gray-200 */
+
+    /* Glow / Effects */
+    --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+    --shadow-glow: 0 0 15px rgba(37, 99, 235, 0.15);
 }
 
 @theme inline {
@@ -101,45 +91,41 @@
 }
 
 :root {
-    /* Mappings for Shadcn/Tailwind */
-    --background: 222 20% 6%;
-    /* #0C0E12 converted roughly to HSL for transparency if needed */
-    --foreground: 220 13% 91%;
-    /* #E5E7EB */
+    /* Mappings for Shadcn/Tailwind - LIGHT MODE */
+    --background: 0 0% 100%;
+    /* White */
+    --foreground: 222 47% 11%;
+    /* Slate-900 */
 
-    --card: 220 17% 9%;
-    /* #14171C - bg-panel */
-    --card-foreground: 220 13% 91%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 220 17% 9%;
-    --popover-foreground: 220 13% 91%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 220 100% 61%;
-    /* #3A7BFF Accent */
-    --primary-foreground: 0 0% 100%;
+    --primary: 221 83% 53%;
+    /* Blue-600 */
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 220 15% 12%;
-    /* bg-hover */
-    --secondary-foreground: 220 13% 91%;
+    --secondary: 210 40% 96.1%;
+    /* Gray-100 */
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 15% 12%;
-    --muted-foreground: 215 9% 65%;
-    /* text-secondary */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16% 47%;
 
-    --destructive: 359 100% 65%;
-    /* #FF4D4F */
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 14% 14%;
-    /* #1F2329 */
-    --input: 220 14% 14%;
-    --ring: 220 100% 61%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
 
     --radius: 0.5rem;
 }
 
 .dark {
-    /* Same as root since we default to Dark Mode per requirements */
+    /* Keeping Dark Mode definitions just in case, but root is now Light */
     --background: 222 20% 6%;
     --foreground: 220 13% 91%;
     --card: 220 17% 9%;
@@ -161,13 +147,17 @@
     --ring: 220 100% 61%;
 }
 
+.custom-height {
+    height: clamp(300px, 55vh, 800px);
+}
+
 @layer base {
     * {
         @apply border-border outline-ring/50;
     }
 
     body {
-        @apply text-white;
+        @apply text-gray-900;
         font-family: "Open Sans", sans-serif;
         font-optical-sizing: auto;
         background-color: var(--color-main);
@@ -181,7 +171,7 @@
         }
 
         100% {
-            transform: translateX(-100%);
+            transform: translateX(-50%);
         }
     }
 
@@ -196,6 +186,10 @@
     }
 
     .animate-marquee {
+        animation: marquee 25s linear infinite;
+    }
+
+    .animate-marquee-infinite {
         animation: marquee 25s linear infinite;
     }
 
