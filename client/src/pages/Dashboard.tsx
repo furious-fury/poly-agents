@@ -7,7 +7,7 @@ import AgentControl from '../components/AgentControl';
 import MarketExplorer from '../components/MarketExplorer';
 import UserSettings from '../components/UserSettings';
 import { WalletWatch } from '../components/WalletWatch';
-import OnboardingModal from '../components/OnboardingModal';
+// import OnboardingModal from '../components/OnboardingModal';
 
 import { Toaster } from "sonner";
 
@@ -208,7 +208,7 @@ function Dashboard() {
     return (
         <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
             <Toaster position="top-right" theme="dark" toastOptions={{ duration: 5000 }} />
-            <OnboardingModal />
+            {/* <OnboardingModal /> */}
             {renderContent()}
         </Layout>
     )
