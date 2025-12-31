@@ -9,12 +9,12 @@ import { withdrawSchema, updateSettingsSchema, importWalletSchema } from "../sch
 const router = Router();
 
 /**
- * POST /api/user/settings
+ * GET /api/user/settings/:userId
  * Get user's risk limits and settings
  */
-router.post("/settings", async (req: Request, res: Response) => {
+router.get("/settings/:userId", requireAuth, async (req: Request, res: Response) => {
     try {
-        const { userId } = req.body;
+        const { userId } = req.params;
 
         if (!userId) {
             return res.status(400).json({ error: "userId is required" });

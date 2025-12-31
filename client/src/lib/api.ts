@@ -157,10 +157,10 @@ export const useUserSettings = (userId: string) => {
     return useQuery({
         queryKey: ['userSettings', userId],
         queryFn: async () => {
-            const res = await fetch(`${API_URL}/user/settings`, {
-                method: 'POST',
-                headers: authHeaders(),
-                body: JSON.stringify({ userId }),
+            // New format: GET /settings/:userId
+            const res = await fetch(`${API_URL}/user/settings/${userId}`, {
+                method: 'GET',
+                headers: authHeaders() // Now required
             });
             if (!res.ok) throw new Error('Failed to fetch user settings');
             return res.json();
