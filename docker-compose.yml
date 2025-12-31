@@ -32,7 +32,13 @@ services:
       - POLY_BUILDER_SECRET=${POLY_BUILDER_SECRET}
       - POLY_BUILDER_PASSPHRASE=${POLY_BUILDER_PASSPHRASE}
     restart: always
-  # redis service removed (Using External)
-  # db service removed (Using Supabase)
 
-  # volumes removed
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - server
+    restart: always
