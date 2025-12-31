@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bot, Copy, Check, BarChart3, Shield, Terminal, Zap, LineChart, Globe, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 import { FadeIn } from '../components/FadeIn';
 
 // Reusing existing components for sections but with new wrapper classes if needed
@@ -62,16 +63,31 @@ function LandingPage() {
                                 Live on Polymarket
                             </div>
 
-                            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]">
+                            <motion.h1
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: 0.1 }}
+                                className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]"
+                            >
                                 Powerful Agents for <br />
                                 <span className="">Smarter Trading.</span>
-                            </h1>
+                            </motion.h1>
 
-                            <p className="text-lg md:text-xl text-blue-100 max-w-xl leading-relaxed">
+                            <motion.p
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: 0.2 }}
+                                className="text-lg md:text-xl text-blue-100 max-w-xl leading-relaxed"
+                            >
                                 Unlock the full potential of prediction markets with our feature-rich platform. Automate trades, analyze sentiment, and manage risk 24/7.
-                            </p>
+                            </motion.p>
 
-                            <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: 0.3 }}
+                                className="flex flex-col sm:flex-row items-center gap-4 pt-4"
+                            >
                                 <div className="flex items-center gap-3 bg-white/10 border border-white/20 rounded-full pl-6 pr-2 py-2 backdrop-blur-sm hover:bg-white/15 transition-all group">
                                     <code className="text-blue-100 font-mono text-sm tracking-wide">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code>
                                     <button
@@ -88,7 +104,7 @@ function LandingPage() {
                                 >
                                     Launch App <ChevronRight className="w-4 h-4" />
                                 </button>
-                            </div>
+                            </motion.div>
 
                             {/* Trust Logos */}
                             <div className="pt-8 flex items-center gap-8 opacity-60">
@@ -101,7 +117,13 @@ function LandingPage() {
                         {/* Hero Image / Mockup (Right) */}
                         <div className="relative lg:h-[600px] flex items-center justify-center lg:justify-end">
                             {/* Main App Mockup Card */}
-                            <div className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl shadow-blue-900/40 rotate-1 hover:rotate-0 transition-transform duration-500 ease-out">
+                            <motion.div
+                                initial={{ opacity: 0, rotate: 5, y: 50 }}
+                                animate={{ opacity: 1, rotate: 1, y: 0 }}
+                                transition={{ duration: 0.8, delay: 0.2, type: "spring" }}
+                                whileHover={{ rotate: 0, scale: 1.02, transition: { duration: 0.3 } }}
+                                className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl shadow-blue-900/40"
+                            >
                                 {/* Header */}
                                 <div className="flex items-center justify-between mb-8">
                                     <div>
@@ -162,7 +184,7 @@ function LandingPage() {
                                     </div>
                                     <span className="text-green-600 font-bold text-sm">+$240</span>
                                 </div>
-                            </div>
+                            </motion.div>
 
                             {/* Floating Analytics Card (Background Layer) */}
                             {/* <div className="absolute top-[20%] -right-12 w-64 p-5 bg-white rounded-2xl shadow-xl shadow-blue-900/20 -rotate-6 z-0 hidden lg:block opacity-90">
@@ -192,7 +214,13 @@ function LandingPage() {
                     <div className="space-y-32">
                         {/* Feature 1: Real-Time Analytics (Text Left, Image Right) */}
                         <div className="grid lg:grid-cols-2 gap-16 items-center">
-                            <div className="order-2 lg:order-1">
+                            <motion.div
+                                initial={{ opacity: 0, x: -50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                                className="order-2 lg:order-1"
+                            >
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wide mb-6">
                                     Analytics
                                 </div>
@@ -203,8 +231,14 @@ function LandingPage() {
                                 <button className="px-6 py-3 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
                                     Start Analyzing
                                 </button>
-                            </div>
-                            <div className="order-1 lg:order-2 bg-gray-50 rounded-[2.5rem] p-12 flex items-center justify-center">
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, x: 50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                                className="order-1 lg:order-2 bg-gray-50 rounded-[2.5rem] p-12 flex items-center justify-center"
+                            >
                                 {/* Mockup */}
                                 <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-8 w-full max-w-sm">
                                     <div className="flex items-center gap-4 mb-8">
@@ -226,12 +260,18 @@ function LandingPage() {
                                         <span className="text-gray-900 font-bold">$1.2M</span>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
 
                         {/* Feature 2: Seamless Integration (Image Left, Text Right) */}
                         <div className="grid lg:grid-cols-2 gap-16 items-center">
-                            <div className="order-1 bg-gray-50 rounded-[2.5rem] p-12 flex items-center justify-center">
+                            <motion.div
+                                initial={{ opacity: 0, x: -50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                                className="order-1 bg-gray-50 rounded-[2.5rem] p-12 flex items-center justify-center"
+                            >
                                 {/* Mockup */}
                                 <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-8 w-full max-w-sm relative">
                                     <div className="absolute -top-6 -right-6 w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30">
@@ -250,8 +290,14 @@ function LandingPage() {
                                         ))}
                                     </div>
                                 </div>
-                            </div>
-                            <div className="order-2">
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, x: 50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                                className="order-2"
+                            >
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wide mb-6">
                                     Integration
                                 </div>
@@ -269,12 +315,18 @@ function LandingPage() {
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
+                            </motion.div>
                         </div>
 
                         {/* Feature 3: Portfolio Management (Text Left, Image Right) */}
                         <div className="grid lg:grid-cols-2 gap-16 items-center">
-                            <div className="order-2 lg:order-1">
+                            <motion.div
+                                initial={{ opacity: 0, x: -50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                                className="order-2 lg:order-1"
+                            >
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wide mb-6">
                                     Management
                                 </div>
@@ -285,8 +337,14 @@ function LandingPage() {
                                 <button className="px-6 py-3 bg-white border border-gray-200 text-gray-900 rounded-full font-medium hover:bg-gray-50 transition-colors">
                                     View Dashboard
                                 </button>
-                            </div>
-                            <div className="order-1 lg:order-2 bg-gray-50 rounded-[2.5rem] p-12 flex items-center justify-center">
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, x: 50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                                className="order-1 lg:order-2 bg-gray-50 rounded-[2.5rem] p-12 flex items-center justify-center"
+                            >
                                 {/* Mockup */}
                                 <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-6 w-full max-w-sm">
                                     <div className="flex items-center justify-between mb-8 border-b border-gray-100 pb-4">
@@ -315,7 +373,7 @@ function LandingPage() {
                                         ))}
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
                     </div>
                 </div>
