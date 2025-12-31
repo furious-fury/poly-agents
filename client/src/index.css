@@ -348,4 +348,16 @@
     .animate-progress-indeterminate {
         animation: progress-indeterminate 1.5s ease-in-out infinite;
     }
+
+    /* Hide Scrollbar Utilities */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
 }

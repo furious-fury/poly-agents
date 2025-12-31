@@ -28,7 +28,7 @@ export default function OnboardingModal() {
                     <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-20"></div>
                     <DialogHeader className="z-10 text-center sm:text-center space-y-0">
                         <DialogTitle className="text-3xl font-black font-orbitron tracking-tighter text-transparent bg-clip-text bg-linear-to-r from-white to-blue-200">
-                            WELCOME TO ATHENA
+                            WELCOME TO POLYAGENTS
                         </DialogTitle>
                         <DialogDescription className="text-blue-200/60 text-sm tracking-widest uppercase mt-1">
                             Next-Gen Autonomous Trading
@@ -46,7 +46,7 @@ export default function OnboardingModal() {
                             <div>
                                 <h3 className="text-lg font-bold text-white mb-1">Deepmind Architecture</h3>
                                 <p className="text-gray-400 text-sm leading-relaxed">
-                                    Athena now supports multiple AI brains. Choose between <span className="text-white font-bold">OpenAI</span>, <span className="text-white font-bold">Claude (Anthropic)</span>, and <span className="text-white font-bold">Gemini</span> to power your agents. Each offers unique reasoning capabilities for different market conditions.
+                                    PolyAgents now supports multiple AI brains. Choose between <span className="text-white font-bold">OpenAI</span>, <span className="text-white font-bold">Claude (Anthropic)</span>, and <span className="text-white font-bold">Gemini</span> to power your agents. Each offers unique reasoning capabilities for different market conditions.
                                 </p>
                             </div>
                         </div>
@@ -72,7 +72,7 @@ export default function OnboardingModal() {
                             <div>
                                 <h3 className="text-lg font-bold text-white mb-1">Enhanced Autonomy</h3>
                                 <p className="text-gray-400 text-sm leading-relaxed">
-                                    Agents now feature improved risk controls and smarter default strategies. Deploy a "Risk Taker" or "Conservative" agent in seconds and let Athena handle the execution.
+                                    Agents now feature improved risk controls and smarter default strategies. Deploy a "Risk Taker" or "Conservative" agent in seconds and let PolyAgents handle the execution.
                                 </p>
                             </div>
                         </div>

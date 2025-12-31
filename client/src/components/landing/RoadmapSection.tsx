@@ -21,7 +21,7 @@ export function RoadmapSection() {
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-4">
                         Roadmap
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold mb-4">The Future of Athena</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4">The Future of PolyAgents</h2>
                     <p className="text-gray-400 max-w-xl mx-auto">We're just getting started. Here's what's coming next.</p>
                 </div>
 

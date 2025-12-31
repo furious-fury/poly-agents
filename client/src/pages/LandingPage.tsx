@@ -14,8 +14,10 @@ function LandingPage() {
     const navigate = useNavigate();
     const [copied, setCopied] = useState(false);
 
+    const tokenMint = import.meta.env.VITE_TOKEN_MINT_ADDRESS || "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+
     const handleCopy = () => {
-        navigator.clipboard.writeText("EegYQPAgnNLvPLR9tsui3iY99578a5UkRuoaX6ecpump");
+        navigator.clipboard.writeText(tokenMint);
         toast.success("CA copied to clipboard!");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -46,15 +48,16 @@ function LandingPage() {
 
             {/* Containerized Hero Section */}
             <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto bg-blue-600 rounded-[2.5rem] relative overflow-hidden shadow-2xl shadow-blue-900/20 min-h-[600px] flex items-center">
+                <div className="max-w-7xl mx-auto bg-blue-600 rounded-[2.5rem] relative overflow-hidden shadow-2xl shadow-blue-900/20">
                     {/* Background Accents (Inside Blue Card) */}
                     <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-500/30 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
                     <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-700/50 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2" />
 
                     {/* Content Grid */}
-                    <div className="relative z-10 w-full grid lg:grid-cols-2 gap-6 items-center p-8 md:p-16 lg:p-20">
+                    {/* Content Grid */}
+                    <div className="relative z-10 w-full grid lg:grid-cols-2 gap-6 items-center p-5 sm:p-8 md:p-12 lg:p-10">
                         {/* Text Content (Left) */}
-                        <div className="text-left space-y-8">
+                        <div className="text-left space-y-8 min-w-0">
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/30 border border-blue-400/30 text-white text-sm font-medium backdrop-blur-md">
                                 <span className="relative flex h-2 w-2">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
@@ -67,7 +70,7 @@ function LandingPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.6, delay: 0.1 }}
-                                className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]"
+                                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]"
                             >
                                 Powerful Agents for <br />
                                 <span className="">Smarter Trading.</span>
@@ -77,7 +80,7 @@ function LandingPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.6, delay: 0.2 }}
-                                className="text-lg md:text-xl text-blue-100 max-w-xl leading-relaxed"
+                                className="text-base sm:text-lg md:text-xl text-blue-100 max-w-xl leading-relaxed"
                             >
                                 Unlock the full potential of prediction markets with our feature-rich platform. Automate trades, analyze sentiment, and manage risk 24/7.
                             </motion.p>
@@ -86,16 +89,16 @@ function LandingPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.6, delay: 0.3 }}
-                                className="flex flex-col sm:flex-row items-center gap-4 pt-4"
+                                className="flex flex-col sm:flex-row items-center gap-4 pt-4  min-w-0"
                             >
-                                <div className="flex items-center gap-3 bg-white/10 border border-white/20 rounded-full pl-6 pr-2 py-2 backdrop-blur-sm hover:bg-white/15 transition-all group">
-                                    <code className="text-blue-100 font-mono text-sm tracking-wide">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code>
+                                <div className="flex items-center gap-3 bg-white/10 border border-white/20 rounded-full pl-4 sm:pl-6 pr-2 py-2 backdrop-blur-sm hover:bg-white/15 transition-all group max-w-full min-w-0">
+                                    <code className="text-blue-100 font-mono text-[10px] sm:text-sm break-all line-clamp-1 sm:line-clamp-none md:truncate min-w-0 flex-1">{tokenMint}</code>
                                     <button
                                         onClick={handleCopy}
-                                        className="p-2.5 rounded-full bg-white text-blue-600 hover:bg-blue-50 transition-colors shadow-sm"
+                                        className="p-2 sm:p-2.5 rounded-full bg-white text-blue-600 hover:bg-blue-50 transition-colors shadow-sm shrink-0"
                                         title="Copy Address"
                                     >
-                                        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                        {copied ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                                     </button>
                                 </div>
                                 <button
@@ -107,22 +110,22 @@ function LandingPage() {
                             </motion.div>
 
                             {/* Trust Logos */}
-                            <div className="pt-8 flex items-center gap-8 opacity-60">
-                                <span className="text-white font-bold text-lg flex items-center gap-2"><Bot className="w-5 h-5" /> PolyAgents</span>
-                                <span className="text-white font-bold text-lg flex items-center gap-2"><Globe className="w-5 h-5" /> Polymarket</span>
-                                <span className="text-white font-bold text-lg flex items-center gap-2"><Shield className="w-5 h-5" /> Secure</span>
+                            <div className="pt-8 flex items-center justify-center sm:justify-start gap-3 sm:gap-8 opacity-60 overflow-hidden min-w-0">
+                                <span className="text-white font-bold text-[13px] sm:text-lg flex items-center gap-1.5 sm:gap-2 whitespace-nowrap"><Bot className="w-4 h-4 sm:w-5 sm:h-5" /> PolyAgents</span>
+                                <span className="text-white font-bold text-[13px] sm:text-lg flex items-center gap-1.5 sm:gap-2 whitespace-nowrap"><Globe className="w-4 h-4 sm:w-5 sm:h-5" /> Polymarket</span>
+                                <span className="text-white font-bold text-[13px] sm:text-lg flex items-center gap-1.5 sm:gap-2 whitespace-nowrap"><Shield className="w-4 h-4 sm:w-5 sm:h-5" /> Secure</span>
                             </div>
                         </div>
 
                         {/* Hero Image / Mockup (Right) */}
-                        <div className="relative lg:h-[600px] flex items-center justify-center lg:justify-end">
+                        <div className="relative flex items-center justify-center lg:justify-end mt-12 lg:mt-0 min-w-0">
                             {/* Main App Mockup Card */}
                             <motion.div
                                 initial={{ opacity: 0, rotate: 5, y: 50 }}
                                 animate={{ opacity: 1, rotate: 1, y: 0 }}
                                 transition={{ duration: 0.8, delay: 0.2, type: "spring" }}
                                 whileHover={{ rotate: 0, scale: 1.02, transition: { duration: 0.3 } }}
-                                className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl shadow-blue-900/40"
+                                className="relative w-[80%] sm:w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl shadow-blue-900/40 mx-auto lg:mx-0"
                             >
                                 {/* Header */}
                                 <div className="flex items-center justify-between mb-8">

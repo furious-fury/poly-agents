@@ -7,7 +7,7 @@ interface LoadingScreenProps {
 }
 
 export function LoadingScreen({
-    message = "Initializing Athena AI...",
+    message = "Initializing PolyAgents...",
     subMessage = "Synchronizing agents and market data",
     fullScreen = true
 }: LoadingScreenProps) {
