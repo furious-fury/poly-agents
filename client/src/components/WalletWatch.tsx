@@ -196,10 +196,10 @@ export function WalletWatch({ userId }: WalletWatchProps) {
                 <p className="text-gray-500 mt-2">Track external whales and smart money movements in real-time.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[800px]">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:h-[800px]">
                 {/* Sidebar - Watchlist */}
-                <div className="lg:col-span-1 bg-white rounded-4xl border border-gray-100 shadow-card flex flex-col overflow-hidden">
-                    <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div className="lg:col-span-1 bg-white rounded-4xl border border-gray-100 shadow-card flex flex-col overflow-hidden h-[400px] lg:h-auto">
+                    <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
                         <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Watchlist</h3>
                         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                             <DialogTrigger asChild>
@@ -298,36 +298,36 @@ export function WalletWatch({ userId }: WalletWatchProps) {
                 </div>
 
                 {/* Main: Trade History */}
-                <div className="lg:col-span-3 bg-white rounded-4xl border border-gray-100 shadow-card p-6 flex flex-col h-[800px] overflow-hidden relative">
-                    <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-6">
+                <div className="lg:col-span-3 bg-white rounded-4xl border border-gray-100 shadow-card p-6 flex flex-col h-[500px] lg:h-full overflow-hidden relative">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-gray-100 pb-6 gap-4 md:gap-0 shrink-0">
                         <div>
-                            <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                            <h3 className="text-lg md:text-2xl font-bold text-gray-900 flex items-center gap-3">
                                 {selectedWallet ? (
                                     <>
-                                        <span>
+                                        <span className="truncate max-w-[200px] md:max-w-none">
                                             {wallets.find(w => w.address === selectedWallet)?.name ||
                                                 `${selectedWallet.slice(0, 6)}...${selectedWallet.slice(-6)}`}
                                         </span>
-                                        <a href={`https://polyscan.com/address/${selectedWallet}`} target="_blank" className="text-gray-300 hover:text-blue-500 transition-colors">
+                                        <a href={`https://polyscan.com/address/${selectedWallet}`} target="_blank" className="text-gray-300 hover:text-blue-500 transition-colors shrink-0">
                                             <ExternalLink size={20} />
                                         </a>
                                     </>
                                 ) : "Select a wallet"}
                             </h3>
                             {selectedWallet && (
-                                <p className="text-gray-500 font-mono text-sm mt-1">{selectedWallet}</p>
+                                <p className="text-gray-500 font-mono text-xs md:text-sm mt-1 truncate max-w-[250px] md:max-w-none">{selectedWallet}</p>
                             )}
                         </div>
-                        <div className="flex gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+                        <div className="flex gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100 w-full md:w-auto overflow-x-auto">
                             <button
                                 onClick={() => setViewMode("positions")}
-                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${viewMode === "positions" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap ${viewMode === "positions" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                             >
                                 Active Positions
                             </button>
                             <button
                                 onClick={() => setViewMode("history")}
-                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${viewMode === "history" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap ${viewMode === "history" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                             >
                                 Trade History
                             </button>

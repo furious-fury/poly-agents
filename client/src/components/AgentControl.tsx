@@ -310,11 +310,11 @@ export default function AgentControl({ dbUserId, variant = "full", layout = "gri
                         /* Compact List View */
                         <Card key={agent.id} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden relative rounded-3xl">
                             {agent.isRunning && (
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-blue-400 via-blue-600 to-blue-400 animate-pulse" />
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-blue-400 via-blue-600 to-blue-400 animate-pulse hidden md:block" />
                             )}
-                            <div className="p-4 flex items-center justify-between gap-4">
+                            <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 {/* Identity */}
-                                <div className="flex items-center gap-4 min-w-[200px]">
+                                <div className="flex items-center gap-4 min-w-[200px] w-full md:w-auto">
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${agent.isRunning ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-gray-100 text-gray-400'}`}>
                                         <div className="text-sm font-bold">AI</div>
                                     </div>
@@ -327,7 +327,7 @@ export default function AgentControl({ dbUserId, variant = "full", layout = "gri
                                     </div>
                                 </div>
 
-                                {/* Quick Stats (Hidden on very small screens) */}
+                                {/* Quick Stats (Hidden on very small screens, visible on md) */}
                                 <div className="hidden md:flex items-center gap-6 text-xs">
                                     <div className="flex flex-col">
                                         <span className="text-gray-400 font-medium uppercase text-[10px] tracking-wider">Strategy</span>
@@ -340,12 +340,12 @@ export default function AgentControl({ dbUserId, variant = "full", layout = "gri
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 w-full md:w-auto mt-2 md:mt-0">
                                     <Button
                                         size="sm"
                                         onClick={() => handleToggle(agent.id, agent.isRunning)}
                                         disabled={!publicKey}
-                                        className={`h-9 px-4 font-bold rounded-lg shadow-none transition-all ${agent.isRunning
+                                        className={`h-9 px-4 font-bold rounded-lg shadow-none transition-all flex-1 md:flex-none ${agent.isRunning
                                             ? "bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
                                             : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20"
                                             }`}
@@ -356,7 +356,7 @@ export default function AgentControl({ dbUserId, variant = "full", layout = "gri
                                         size="icon"
                                         variant="ghost"
                                         onClick={() => openEdit(agent)}
-                                        className="h-9 w-9 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                        className="h-9 w-9 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg flex-1 md:flex-none max-w-[40px] md:max-w-none"
                                     >
                                         <Settings className="w-4 h-4" />
                                     </Button>
@@ -364,7 +364,7 @@ export default function AgentControl({ dbUserId, variant = "full", layout = "gri
                                         size="icon"
                                         variant="ghost"
                                         onClick={() => handleDelete(agent.id)}
-                                        className="h-9 w-9 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                                        className="h-9 w-9 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg flex-1 md:flex-none max-w-[40px] md:max-w-none"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </Button>

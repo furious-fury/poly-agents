@@ -69,18 +69,27 @@ const Chart = ({ data, className, timeRange = '24h', onTimeRangeChange }: ChartP
     const gradientId = useMemo(() => `colorValue-${Math.random().toString(36).substr(2, 9)}`, []);
 
     return (
-        <div className={`w-full bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col ${className || 'h-[400px]'}`}>
-            <div className="flex justify-between items-center mb-6 px-1">
-                <div className="flex items-center gap-4">
-                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Performance</h3>
-                    <div className="flex bg-gray-50 rounded-lg p-1 border border-gray-100">
+        <div className={`w-full bg-white rounded-3xl p-4 md:p-6 border border-gray-100 shadow-sm flex flex-col ${className || 'h-[400px]'}`}>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 px-1 gap-4 md:gap-0">
+                <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 w-full md:w-auto">
+                    <div className="flex justify-between items-center w-full md:w-auto">
+                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Performance</h3>
+                        {/* Mobile Badge */}
+                        <span className={`md:hidden text-xs font-bold px-2.5 py-1 rounded-lg border ${isPositive
+                            ? 'text-emerald-600 bg-emerald-50 border-emerald-100'
+                            : 'text-red-500 bg-red-50 border-red-100'
+                            }`}>
+                            {change}
+                        </span>
+                    </div>
+                    <div className="flex bg-gray-50 rounded-lg p-1 border border-gray-100 self-start md:self-auto">
                         {(['24h', '1w', '1m'] as const).map((r) => (
                             <button
                                 key={r}
                                 onClick={() => onTimeRangeChange?.(r)}
                                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${timeRange === r
-                                        ? 'bg-white text-gray-900 shadow-sm'
-                                        : 'text-gray-400 hover:text-gray-600'
+                                    ? 'bg-white text-gray-900 shadow-sm'
+                                    : 'text-gray-400 hover:text-gray-600'
                                     }`}
                             >
                                 {r.toUpperCase()}
@@ -89,7 +98,8 @@ const Chart = ({ data, className, timeRange = '24h', onTimeRangeChange }: ChartP
                     </div>
                 </div>
 
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${isPositive
+                {/* Desktop Badge */}
+                <span className={`hidden md:inline-block text-xs font-bold px-2.5 py-1 rounded-lg border ${isPositive
                     ? 'text-emerald-600 bg-emerald-50 border-emerald-100'
                     : 'text-red-500 bg-red-50 border-red-100'
                     }`}>

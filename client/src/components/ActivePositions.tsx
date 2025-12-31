@@ -100,15 +100,15 @@ export default function ActivePositions({ userId, className }: ActivePositionsPr
                 </DialogContent>
             </Dialog>
 
-            <div className="flex justify-between items-center mb-6 shrink-0">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 shrink-0 gap-4 md:gap-0">
                 <div>
                     <h3 className="text-lg font-bold text-gray-900">Portfolio Activity</h3>
                     <p className="text-gray-500 text-sm">Manage predictions and view history.</p>
                 </div>
-                <div className="flex gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
+                <div className="flex gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-100 w-full md:w-auto">
                     <button
                         onClick={() => setTab("positions")}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${tab === "positions"
+                        className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${tab === "positions"
                             ? "bg-white text-blue-600 shadow-sm"
                             : "text-gray-500 hover:text-gray-700"
                             }`}
@@ -118,7 +118,7 @@ export default function ActivePositions({ userId, className }: ActivePositionsPr
                     </button>
                     <button
                         onClick={() => setTab("history")}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${tab === "history"
+                        className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${tab === "history"
                             ? "bg-white text-blue-600 shadow-sm"
                             : "text-gray-500 hover:text-gray-700"
                             }`}
