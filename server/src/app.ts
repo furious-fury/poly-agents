@@ -36,7 +36,7 @@ app.use(limiter);
 app.use(express.json());    // Parse JSON request bodies
 
 const isProduction = process.env.NODE_ENV === 'production';
-const allowedOrigins = [process.env.FRONTEND_DOMAIN || 'http://localhost:5173'];
+const allowedOrigins = (process.env.FRONTEND_DOMAIN || 'http://localhost:5173').split(',').map(d => d.trim());
 
 const corsOptions = {
     origin: (origin: any, callback: any) => {
