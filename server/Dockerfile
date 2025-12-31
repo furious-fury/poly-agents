@@ -18,4 +18,4 @@ RUN npm run build
 EXPOSE 5000
 
 # Start server
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/src/server.js"]
