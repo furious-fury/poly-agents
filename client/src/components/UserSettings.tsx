@@ -313,6 +313,8 @@ export default function UserSettings({ dbUserId }: UserSettingsProps) {
     );
 }
 
+import { API_URL } from "../lib/api";
+
 const ExportKeyButton = ({ userId }: { userId: string }) => {
     const [key, setKey] = useState<string | null>(null);
     const [revealed, setRevealed] = useState(false);
@@ -325,7 +327,7 @@ const ExportKeyButton = ({ userId }: { userId: string }) => {
         }
 
         try {
-            const res = await fetch(`http://localhost:5000/api/user/proxy/export?userId=${userId}`);
+            const res = await fetch(`${API_URL}/user/proxy/export?userId=${userId}`);
             const data = await res.json();
             if (data.privateKey) {
                 setKey(data.privateKey);

@@ -2,6 +2,9 @@ import { Router, type Request, type Response } from "express";
 import { prisma } from "../config/database.js";
 import { logger } from "../config/logger.js";
 import { ethers } from "ethers";
+import { requireAuth } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { withdrawSchema, updateSettingsSchema, importWalletSchema } from "../schemas/user.schemas.js";
 
 const router = Router();
 
@@ -63,7 +66,7 @@ router.post("/settings", async (req: Request, res: Response) => {
  * PUT /api/user/settings
  * Update user's risk limits
  */
-router.put("/settings", async (req: Request, res: Response) => {
+router.put("/settings", requireAuth, validate(updateSettingsSchema), async (req: Request, res: Response) => {
     try {
         const { userId, maxTradeAmount, maxMarketExposure, maxTotalExposure, tradeCooldownSeconds } = req.body;
 
@@ -137,7 +140,7 @@ import { importProxyWallet, getProxyWallet, exportProxyWallet, withdrawFunds, sy
  * POST /api/user/proxy/import
  * Import an existing Proxy Wallet and Private Key
  */
-router.post("/proxy/import", importProxyWallet);
+router.post("/proxy/import", requireAuth, validate(importWalletSchema), importProxyWallet);
 
 /**
  * POST /api/user/proxy/sync
@@ -145,23 +148,27 @@ router.post("/proxy/import", importProxyWallet);
  */
 router.post("/proxy/sync", syncDeposits);
 
+// ... [previous imports]
+
 /**
  * GET /api/user/proxy
  * Get user's server-managed proxy wallet details
  */
-router.get("/proxy", getProxyWallet);
+router.get("/proxy", requireAuth, getProxyWallet);
 
 /**
  * GET /api/user/proxy/export
  * Retrieve the decrypted proxy private key
+ * CRITICAL: Protected by Admin Secret
  */
-router.get("/proxy/export", exportProxyWallet);
+router.get("/proxy/export", requireAuth, exportProxyWallet);
 
 /**
  * POST /api/user/proxy/withdraw
  * Withdraw funds from proxy to main wallet
+ * CRITICAL: Protected by Admin Secret
  */
-router.post("/proxy/withdraw", withdrawFunds);
+router.post("/proxy/withdraw", requireAuth, validate(withdrawSchema), withdrawFunds);
 
 import { ActivityController } from "../controllers/activity.controller.js";
 

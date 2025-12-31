@@ -72,7 +72,7 @@ export default function AgentActivityFeed({ agentId }: { agentId: string }) {
                             key={log.id}
                             className={`p-3 rounded-lg border text-sm ${getLogStyle(log.type)} transition-all cursor-pointer hover:opacity-90`}
                             onClick={() => {
-                                console.log('Log clicked:', log.id, 'Current expanded:', expandedLog);
+                                // console.log('Log clicked:', log.id, 'Current expanded:', expandedLog);
                                 setExpandedLog(expandedLog === log.id ? null : log.id);
                             }}
                         >

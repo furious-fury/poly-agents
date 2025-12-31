@@ -29,22 +29,41 @@ Ensure you have the following installed:
    ```
 
 2. **Environment Variables**
-   Create a `.env` file in the `server` directory.
 
-   ```env
-   PORT=5000
-   DATABASE_URL="postgresql://user:password@localhost:5432/polydapp"
-   REDIS_HOST="127.0.0.1"
-   REDIS_PORT=6379
-   
-   # Agent Keys
-   OPENAI_API_KEY="..."
-   GEMINI_API_KEY="..."
-   
-   # Blockchain / Markets
-   PRIVATE_KEY="..."
-   POLYMARKET_API_KEY="..."
-   ```
+Create a `.env` file in the root directory with the following:
+
+```env
+# Server Configuration
+PORT=5000
+NODE_ENV=development # Set to 'production' on deployment
+
+# Security (CRITICAL)
+ADMIN_SECRET=your_secure_random_32_byte_string # Protects sensitive endpoints
+FRONTEND_DOMAIN=http://localhost:5173 # Allowed CORS origin (use https://your-domain.com in prod)
+
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/athena_db"
+REDIS_URL="redis://localhost:6379"
+
+# Blockchain Provider
+POLYGON_RPC_URL="https://polygon-rpc.com"
+
+# Smart Wallet (Pimlico)
+PIMLICO_API_KEY=your_pimlico_key
+
+# Encryption
+ENCRYPTION_KEY=your_32_byte_encryption_key
+```
+
+### Security Features
+- **API Authentication:** Sensitive endpoints (e.g., wallet export) require `x-admin-secret` header.
+- **Rate Limiting:** Protects against brute-force attacks.
+- **Input Validation:** Strict Zod schemas for all user inputs.
+- **Secure Headers:** Helmet.js protection enabled.
+- **CORS:** Strict origin enforcement in production.
+
+### API Endpoints
+The API is exposed at `http://localhost:5000/api`.
 
 3. **Database Setup**
    Run the Prisma migrations to set up your database schema:

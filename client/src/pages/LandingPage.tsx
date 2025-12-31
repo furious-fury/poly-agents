@@ -156,7 +156,7 @@ function LandingPage() {
                                             <Bot className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <p className="text-gray-900 font-bold text-sm">Alpha Agent</p>
+                                            <p className="text-gray-900 font-bold text-sm">Standard Agent</p>
                                             <p className="text-blue-600 text-xs font-medium">Running</p>
                                         </div>
                                     </div>

@@ -10,6 +10,7 @@ import {
     DialogTrigger,
     DialogDescription,
 } from "./ui/dialog";
+import { API_URL } from "../lib/api";
 import { PnLCard } from "./PnLCard";
 
 interface WalletWatchProps {
@@ -73,7 +74,7 @@ export function WalletWatch({ userId }: WalletWatchProps) {
 
     const fetchWallets = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/user/tracked-wallets?userId=${userId}`);
+            const res = await fetch(`${API_URL}/user/tracked-wallets?userId=${userId}`);
             const data = await res.json();
             if (data.success) {
                 setWallets(data.wallets);
@@ -86,7 +87,7 @@ export function WalletWatch({ userId }: WalletWatchProps) {
         if (!newWallet || newWallet.length < 10) return;
         setIsLoading(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/user/tracked-wallets`, {
+            const res = await fetch(`${API_URL}/user/tracked-wallets`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId, address: newWallet, name: newWalletName })
@@ -113,7 +114,7 @@ export function WalletWatch({ userId }: WalletWatchProps) {
 
         // Optimistic UI update could be done here, but let's wait for server
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/user/tracked-wallets`, {
+            const res = await fetch(`${API_URL}/user/tracked-wallets`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId, address: walletToDelete })
@@ -146,7 +147,7 @@ export function WalletWatch({ userId }: WalletWatchProps) {
 
         setIsDataLoading(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/trade/history-address/${address}`);
+            const res = await fetch(`${API_URL}/trade/history-address/${address}`);
             const data = await res.json();
             if (data.success) {
                 setTrades(data.trades);
@@ -172,7 +173,7 @@ export function WalletWatch({ userId }: WalletWatchProps) {
 
         setIsDataLoading(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/trade/positions-address/${address}`);
+            const res = await fetch(`${API_URL}/trade/positions-address/${address}`);
             const data = await res.json();
             if (data.success) {
                 setPositions(data.positions);

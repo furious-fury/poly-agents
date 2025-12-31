@@ -1,6 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// Helper to strip trailing slash
+const stripSlash = (url: string) => url.replace(/\/$/, "");
+
+// RAW Env Var (could be root or /api)
+let rawUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+// Safety check: specific override for the placeholder in .env.example
+if (rawUrl.includes("your-new-domain.com")) {
+    // console.warn("⚠️ [API Setup] Detected placeholder domain in VITE_API_URL. Falling back to localhost.");
+    rawUrl = "http://localhost:5000";
+}
+
+const ENV_URL = stripSlash(rawUrl);
+const ADMIN_SECRET = import.meta.env.VITE_ADMIN_SECRET || "";
+
+// Standardize: API_URL always ends with /api
+export const API_URL = ENV_URL.endsWith("/api") ? ENV_URL : `${ENV_URL}/api`;
+
+// console.log("🔗 [API Setup] Using API URL:", API_URL);
+
+// Helper for authenticated requests
+const authHeaders = () => {
+    return {
+        "Content-Type": "application/json",
+        "x-admin-secret": ADMIN_SECRET
+    };
+};
 
 // Agents API
 export const useAgents = (userId: string | null) => {
@@ -8,7 +34,9 @@ export const useAgents = (userId: string | null) => {
         queryKey: ["agents", userId],
         queryFn: async () => {
             if (!userId) return [];
-            const res = await fetch(`${API_URL}/agents?userId=${userId}`);
+            const res = await fetch(`${API_URL}/agents?userId=${userId}`, {
+                headers: { "x-admin-secret": ADMIN_SECRET } // Pass header for consistency, though read-only might not need it yet
+            });
             const data = await res.json();
             return data.agents; // Extract agents array from response
         },
@@ -22,7 +50,7 @@ export const useControlAgent = () => {
         mutationFn: async ({ agentId, action, userId }: { agentId: string, action: string, userId: string }) => {
             const res = await fetch(`${API_URL}/agents/${agentId}/${action}`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders(),
                 body: JSON.stringify({ userId }),
             });
             if (!res.ok) throw new Error(`Failed to ${action} agent`);
@@ -46,7 +74,7 @@ export const useUpdateAgent = () => {
         mutationFn: async ({ agentId, data }: { agentId: string, data: any }) => {
             const res = await fetch(`${API_URL}/agents/${agentId}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders(),
                 body: JSON.stringify(data),
             });
             if (!res.ok) throw new Error("Failed to update agent");
@@ -64,7 +92,7 @@ export const useCreateAgent = () => {
         mutationFn: async ({ name, description, riskProfile, userId, stopLossPercent, takeProfitPercent, llmProvider }: { name: string, description: string, riskProfile: string, userId: string, stopLossPercent?: number, takeProfitPercent?: number, llmProvider?: string }) => {
             const res = await fetch(`${API_URL}/agents`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders(),
                 body: JSON.stringify({ name, description, riskProfile, userId, stopLossPercent, takeProfitPercent, llmProvider }),
             });
             if (!res.ok) throw new Error("Failed to create agent");
@@ -82,6 +110,7 @@ export const useDeleteAgent = () => {
         mutationFn: async (agentId: string) => {
             const res = await fetch(`${API_URL}/agents/${agentId}`, {
                 method: "DELETE",
+                headers: { "x-admin-secret": ADMIN_SECRET }
             });
             if (!res.ok) throw new Error("Failed to delete agent");
             return res.json();
@@ -97,7 +126,7 @@ export const useEnableTrading = () => {
         mutationFn: async (credentials: { userId: string; apiKey: string; apiSecret: string; apiPassphrase: string; proxyWallet: string }) => {
             const res = await fetch(`${API_URL}/agents/auth/polymarket`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders(),
                 body: JSON.stringify(credentials),
             });
             if (!res.ok) {
@@ -130,7 +159,7 @@ export const useUserSettings = (userId: string) => {
         queryFn: async () => {
             const res = await fetch(`${API_URL}/user/settings`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders(),
                 body: JSON.stringify({ userId }),
             });
             if (!res.ok) throw new Error('Failed to fetch user settings');
@@ -179,7 +208,7 @@ export const useUpdateSettings = () => {
         }) => {
             const res = await fetch(`${API_URL}/user/settings`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders(),
                 body: JSON.stringify(data),
             });
             if (!res.ok) throw new Error('Failed to update settings');
@@ -197,7 +226,7 @@ export const useSyncDeposits = () => {
         mutationFn: async (userId: string) => {
             const res = await fetch(`${API_URL}/user/proxy/sync`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders(),
                 body: JSON.stringify({ userId }),
             });
             if (!res.ok) throw new Error('Failed to sync deposits');
@@ -217,7 +246,7 @@ export const useSetProxyWallet = () => {
         mutationFn: async ({ userId, proxyWallet }: { userId: string; proxyWallet: string }) => {
             const res = await fetch(`${API_URL}/user/proxy-wallet`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders(),
                 body: JSON.stringify({ userId, proxyWallet }),
             });
             if (!res.ok) throw new Error('Failed to set proxy wallet');
@@ -233,7 +262,9 @@ export const useProxyWallet = (userId: string) => {
     return useQuery({
         queryKey: ["proxyWallet", userId],
         queryFn: async () => {
-            const res = await fetch(`${API_URL}/user/proxy?userId=${userId}`);
+            const res = await fetch(`${API_URL}/user/proxy?userId=${userId}`, {
+                headers: { "x-admin-secret": ADMIN_SECRET } // GET needs headers too
+            });
             if (res.status === 404) return null; // Handle no wallet found gracefully
             if (!res.ok) throw new Error("Failed to fetch proxy wallet");
             return res.json();
@@ -309,7 +340,7 @@ export const useLoginUser = () => {
         mutationFn: async (walletAddress: string) => {
             const res = await fetch(`${API_URL}/auth/login`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders(),
                 body: JSON.stringify({ walletAddress })
             });
             if (!res.ok) throw new Error("Failed to login");
@@ -324,7 +355,7 @@ export const useImportWallet = () => {
         mutationFn: async ({ userId, privateKey, proxyAddress }: { userId: string, privateKey: string, proxyAddress: string }) => {
             const res = await fetch(`${API_URL}/user/proxy/import`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders(),
                 body: JSON.stringify({ userId, privateKey, proxyAddress }),
             });
             if (!res.ok) {
@@ -346,7 +377,7 @@ export const useClosePosition = () => {
         mutationFn: async ({ userId, marketId, outcome }: { userId: string, marketId: string, outcome: string }) => {
             const res = await fetch(`${API_URL}/trade/close`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders(),
                 body: JSON.stringify({ userId, marketId, outcome })
             });
             const data = await res.json();

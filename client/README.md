@@ -37,6 +37,24 @@ The frontend interface for the Athena AI Agentic Trading Platform. Built with Re
 
    The application will start at `http://localhost:5173` (by default).
 
+### Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# API Connection
+VITE_API_URL=http://localhost:5000/api
+
+# Security (CRITICAL)
+VITE_ADMIN_SECRET=your_secure_random_32_byte_string # Must match server ADMIN_SECRET
+```
+
+### Security
+This client is configured to:
+- Automatically inject `x-admin-secret` headers for authorized requests.
+- Sanitize console logs to prevent data leakage.
+- Handle secure cors communication with the backend.
+
 ## 🧩 Project Structure
 
 - `src/components`: Reusable UI components and feature-specific blocks (AgentControl, MarketExplorer, etc.).

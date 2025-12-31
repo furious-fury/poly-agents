@@ -37,6 +37,8 @@
     "dotenv": "^17.2.3",
     "ethers": "^5.8.0",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
     "https-proxy-agent": "^7.0.6",
     "kalshi-typescript": "^3.3.0",
     "node-fetch": "^3.3.2",
@@ -49,6 +51,7 @@
     "redis": "^5.10.0",
     "rss-parser": "^3.13.0",
     "ts-node": "^10.9.2",
-    "viem": "^2.41.2"
+    "viem": "^2.41.2",
+    "zod": "^4.2.1"
   }
 }

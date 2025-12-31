@@ -11,6 +11,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "../components/ui/dialog";
+import { API_URL } from "../lib/api";
 
 interface StatsData {
     users: { total: number };
@@ -59,7 +60,7 @@ export default function AdminStats() {
     const fetchStats = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/stats`);
+            const res = await fetch(`${API_URL}/stats`);
             if (!res.ok) throw new Error("Failed to fetch");
             const json = await res.json();
             setData(json);
@@ -156,7 +157,7 @@ export default function AdminStats() {
                                     className='hover:bg-red-500/50 bg-red-500 shadow-xl'
                                     onClick={async () => {
                                         try {
-                                            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/stats/stop-agents`, { method: "POST" });
+                                            await fetch(`${API_URL}/stats/stop-agents`, { method: "POST" });
                                             // Optional: Close dialog / Show success toast
                                             window.location.reload();
                                         } catch (e) {
