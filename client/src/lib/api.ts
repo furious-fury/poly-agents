@@ -148,7 +148,8 @@ export const useTrades = (userId: string) => {
             return data.trades; // Extract trades array from response
         },
         enabled: !!userId,
-        refetchInterval: 60000,
+        refetchInterval: 5000, // Faster refresh for trades (5s)
+        refetchIntervalInBackground: true,
     });
 };
 
@@ -180,6 +181,7 @@ export const useAgentLogs = (agentId: string) => {
         },
         enabled: !!agentId,
         refetchInterval: 2000, // Auto-refresh every 2s
+        refetchIntervalInBackground: true, // Keep updating even if looking at terminal
     });
 };
 
@@ -270,7 +272,7 @@ export const useProxyWallet = (userId: string) => {
             return res.json();
         },
         enabled: !!userId,
-        refetchInterval: 60000,
+        refetchInterval: 10000, // Proxy wallet check (10s)
     });
 };
 
@@ -287,7 +289,8 @@ export const useUserPositions = (userId: string) => {
         enabled: !!userId,
         // count 0 shares as closed, so we might want to filter them out here or in UI
         select: (positions: any[]) => positions.filter((p: any) => p.shares > 0),
-        refetchInterval: 60000,
+        refetchInterval: 5000, // Positions update every 5s
+        refetchIntervalInBackground: true,
     });
 };
 
@@ -301,7 +304,8 @@ export const useUserActivity = (userId: string) => {
             return data.activities || [];
         },
         enabled: !!userId,
-        refetchInterval: 60000,
+        refetchInterval: 5000, // Activity feed every 5s
+        refetchIntervalInBackground: true,
     });
 };
 
@@ -315,7 +319,8 @@ export const useUserBalance = (userId: string) => {
             return data.balance || { usdc: "0", pol: "0", address: "" };
         },
         enabled: !!userId,
-        refetchInterval: 60000,
+        refetchInterval: 5000, // Balance every 5s
+        refetchIntervalInBackground: true,
     });
 };
 
