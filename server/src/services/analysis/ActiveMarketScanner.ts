@@ -34,14 +34,44 @@ export class ActiveMarketScanner {
             logger.info(`📊 [Stage 1] Quick Scanning ${sampledMarkets.length} markets...`);
 
             // 3. Stage 1: Quick Filter (Parallel)
-            // We verify if markets meet basic criteria (Spread, Volume) BEFORE asking LLM
+            // We verify if markets meet basic criteria (Spread, Volume, Time, Odds) BEFORE asking LLM
+            const NOW = Date.now();
+            const MIN_MS_TO_EXPIRY = 6 * 60 * 60 * 1000; // 6 Hours
+
             const quickAnalysis = await Promise.all(sampledMarkets.map(async (m) => {
                 const spread = m.bestAsk - m.bestBid;
+
+                // 1. Time Check
+                let timeValid = true;
+                if (m.endDate) {
+                    const expiry = new Date(m.endDate).getTime();
+                    if (expiry - NOW < MIN_MS_TO_EXPIRY) timeValid = false;
+                }
+
+                // 2. Odds Check (Avoid Resolved Markets)
+                // If Bid is > 0.97 (97%) or Ask < 0.03 (3%), market is likely effectively resolved
+                const oddsValid = m.bestBid < 0.97 && m.bestAsk > 0.03;
+
+                // 3. Liquidity Check
                 const isLiquid = m.volume24hr > 100 && spread < 0.15; // Max 15% spread
-                return { market: m, valid: isLiquid, reason: isLiquid ? "OK" : `Spread: ${(spread * 100).toFixed(1)}%` };
+
+                const isValid = isLiquid && timeValid && oddsValid;
+
+                let reason = "OK";
+                if (!isLiquid) reason = `Spread/Vol: ${(spread * 100).toFixed(1)}% / $${m.volume24hr}`;
+                else if (!timeValid) reason = "Expiring Soon (<6h)";
+                else if (!oddsValid) reason = `Extreme Odds: ${(m.bestBid * 100).toFixed(1)}%`;
+
+                return { market: m, valid: isValid, reason };
             }));
 
             const survivors = quickAnalysis.filter(r => r.valid).map(r => r.market);
+
+            // Log detailed rejections for debugging
+            const rejections = quickAnalysis.filter(r => !r.valid);
+            if (rejections.length > 0) {
+                logger.info(`🚫 [Filter] Rejected ${rejections.length} markets. Examples: ${rejections.slice(0, 3).map(r => `${r.market.question} (${r.reason})`).join(", ")}`);
+            }
 
             logger.info(`📊 [Stage 1] Filtered: ${survivors.length}/${sampledMarkets.length} passed technical checks. (Time: ${Date.now() - startTime}ms)`);
 

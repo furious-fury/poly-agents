@@ -19,6 +19,7 @@ export interface Market {
     questionId?: string;
     conditionId?: string;
     tokenIds?: string[];
+    endDate?: string; // Market expiration date (ISO)
 }
 
 export interface Position {

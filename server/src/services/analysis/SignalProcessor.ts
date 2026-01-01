@@ -117,6 +117,25 @@ export class SignalProcessor {
         // So SignalProcessor just needs to find CANDIDATE markets.
         // It doesn't need to calculate perfect EV yet, just filter obviously bad ones (e.g. 0 volume).
 
+        // STRICT FILTERING (Replicated from ActiveMarketScanner)
+        const NOW = Date.now();
+        const MIN_MS_TO_EXPIRY = 6 * 60 * 60 * 1000; // 6 Hours
+
+        // 1. Time Check
+        if (market.endDate) {
+            const expiry = new Date(market.endDate).getTime();
+            if (expiry - NOW < MIN_MS_TO_EXPIRY) {
+                logger.info(`🚫 [Filter] Rejected Market "${market.question}": Expiring Soon`);
+                return null;
+            }
+        }
+
+        // 2. Odds Check (Avoid Resolved Markets)
+        if (market.bestBid > 0.97 || market.bestAsk < 0.03) {
+            logger.info(`🚫 [Filter] Rejected Market "${market.question}": Extreme Odds (${market.bestBid}/${market.bestAsk})`);
+            return null;
+        }
+
         if (market.volume24hr < 100) return null; // Filter dead markets
 
         return {

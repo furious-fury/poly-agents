@@ -231,7 +231,8 @@ export class PolymarketTool implements MarketTool {
                 volume24hr: m.volume24hr,
                 questionId: m.questionID,
                 conditionId: m.conditionId,
-                tokenIds: m.clobTokenIds
+                tokenIds: m.clobTokenIds,
+                endDate: m.endDate // Added endDate
             }));
         } catch (error) {
             console.error("get_markets error:", error);
@@ -256,7 +257,8 @@ export class PolymarketTool implements MarketTool {
                 volume24hr: m.volume24hr,
                 questionId: m.questionID,
                 conditionId: m.conditionId,
-                tokenIds: m.clobTokenIds
+                tokenIds: m.clobTokenIds,
+                endDate: m.endDate // Added endDate
             }));
         } catch (error) {
             console.error("search_markets error:", error);
