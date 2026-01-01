@@ -22,6 +22,9 @@ export const app = express();
 // Security Middleware
 app.use(helmet()); // Sets secure HTTP headers (XSS, no-sniff, etc.)
 
+// Trust Nginx Proxy (Required for Rate Limiting)
+app.set('trust proxy', 1);
+
 // Rate Limiting: Prevent brute-force and DOS
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

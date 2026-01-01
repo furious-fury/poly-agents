@@ -21,12 +21,12 @@ export class ActiveMarketScanner {
         llmProvider: string,
         llmModel?: string,
         riskProfile?: string,
-        sampleSize: number = 5
+        sampleSize: number = 50
     ): Promise<MarketOpportunity[]> {
         const startTime = Date.now();
         try {
-            // 1. Fetch top 20 active markets
-            const topMarkets = await get_markets(20);
+            // 1. Fetch top 100 active markets (Broader pool)
+            const topMarkets = await get_markets(100);
             if (topMarkets.length === 0) return [];
 
             // 2. Sample random markets

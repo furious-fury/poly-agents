@@ -206,7 +206,7 @@ export class AgentLoop {
                     agent.llmProvider,
                     agent.llmModel || undefined,
                     agent.riskProfile, // Pass risk profile for aggressive trading
-                    5
+                    50
                 );
 
                 // Convert active market opportunities to TradeOpportunity format
