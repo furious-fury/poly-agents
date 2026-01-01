@@ -202,3 +202,19 @@ tradeRouter.post("/close", async (req, res) => {
         res.status(500).json({ success: false, error: err instanceof Error ? err.message : "Failed to close position" });
     }
 });
+
+// POST /api/trade/cancel-all
+tradeRouter.post("/cancel-all", async (req, res) => {
+    try {
+        const { userId } = req.body;
+        if (!userId) return res.status(400).json({ success: false, error: "userId required" });
+
+        const { cancel_all_orders } = await import("../tools/polymarket.js");
+        const result = await cancel_all_orders(userId);
+
+        res.json({ success: true, result });
+    } catch (err) {
+        console.error("Cancel all error:", err);
+        res.status(500).json({ success: false, error: err instanceof Error ? err.message : "Failed to cancel orders" });
+    }
+});

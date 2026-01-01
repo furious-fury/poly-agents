@@ -698,3 +698,49 @@ export const close_position = async (userId: string, position: any) => {
         throw e;
     }
 };
+
+export const cancel_all_orders = async (userId: string) => {
+    try {
+        console.log(`[CANCEL] Request to cancel all orders for user ${userId}`);
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                walletAddress: true,
+                // privateKey: true, // Not in schema
+                scwAddress: true
+            }
+        });
+
+        if (!user) throw new Error("User not found");
+
+        // Use global PK for now as per widespread usage in this codebase
+        const signer = new ethers.Wallet(process.env.PRIVATE_KEY!);
+        const chainId = 137;
+
+        // Setup ClobClient 
+        console.log("[CANCEL] Signing Clob Auth...");
+        const creds = await signer.signMessage(
+            "The only way to go fast, is to go well."
+        ) as any;
+
+        const useProxy = !!user.scwAddress;
+        const clobClient = new ClobClient(
+            "https://clob.polymarket.com",
+            chainId,
+            signer,
+            creds,
+            useProxy ? 2 : 0,
+            useProxy ? user.scwAddress! : undefined
+        );
+
+        console.log(`[CANCEL] ⚠️ Executing Cancel All for ${user.scwAddress || user.walletAddress}...`);
+        const response = await clobClient.cancelAll();
+        console.log(`[CANCEL] Result:`, response);
+
+        return response;
+
+    } catch (error: any) {
+        console.error("Cancel All Failed:", error.message);
+        throw error;
+    }
+};
