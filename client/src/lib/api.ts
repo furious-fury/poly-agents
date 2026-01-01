@@ -179,7 +179,7 @@ export const useAgentLogs = (agentId: string) => {
             return data.logs;
         },
         enabled: !!agentId,
-        refetchInterval: 10000, // Auto-refresh every 10s
+        refetchInterval: 2000, // Auto-refresh every 2s
     });
 };
 
