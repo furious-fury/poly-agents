@@ -3,22 +3,11 @@ import { BuilderConfig } from "@polymarket/builder-signing-sdk";
 import type { BuilderApiKeyCreds } from "@polymarket/builder-signing-sdk";
 import { ethers } from "ethers";
 import { logger } from "./logger.js";
-import { HttpsProxyAgent } from "https-proxy-agent";
-import axios from "axios";
+import { ProxyManager } from "../services/ProxyManager.js"; // Initialize ProxyManager (applies global patch)
 
-// Configure Proxy if available
-const proxyUrl = process.env.POLY_PROXY_URL;
-if (proxyUrl) {
-    const agent = new HttpsProxyAgent(proxyUrl);
-    // Patch Axios (used by ClobClient)
-    axios.defaults.httpsAgent = agent;
-    axios.defaults.proxy = false; // Disable axios's native proxy
-
-    // Spoof User-Agent
-    const CHROME_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-    axios.defaults.headers.common['User-Agent'] = CHROME_UA;
-
-    logger.info(`[PROXY] 🛡️ CLOB Client using Residential Proxy`);
+// Proxy setup is handled by ProxyManager singleton
+if (process.env.POLY_PROXY_URL) {
+    logger.info(`[PROXY] 🛡️ CLOB Client Proxy Manager Active`);
 }
 
 // Initialize delegation wallet from private key
