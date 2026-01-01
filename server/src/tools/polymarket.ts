@@ -536,6 +536,8 @@ export class PolymarketTool implements MarketTool {
                 const postResp = await clobClient.postOrder(order, orderType === "FOK" ? "FOK" : "GTC");
                 if (!postResp.success && !postResp.orderID) throw new Error(postResp.errorMsg || "Order Failed");
 
+                console.log(`[TRADE] ✅ Order Successfully Placed! ID: ${postResp.orderID || postResp.transactionHash}`);
+
                 return {
                     status: "FILLED",
                     txId: postResp.orderID || postResp.transactionHash,
