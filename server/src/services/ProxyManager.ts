@@ -41,6 +41,21 @@ class ProxyManagerService {
                 return cfg;
             });
 
+            // Add Response Interceptor to catch blocks (Cloudflare 403) that libraries might swallow
+            instance.interceptors.response.use(
+                (response: any) => response,
+                async (error: any) => {
+                    const status = error.response ? error.response.status : 0;
+                    if (status === 403 || status === 429 || status === 503) {
+                        console.warn(`[ProxyManager] 🚫 Axios Blocked (${status}). Rotating proxy...`);
+                        self.rotate();
+                        // Throw specific error for retry logic to catch
+                        return Promise.reject(new Error(`CLOUDFLARE_BLOCK_${status}`));
+                    }
+                    return Promise.reject(error);
+                }
+            );
+
             return instance;
         };
     }

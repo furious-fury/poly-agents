@@ -550,7 +550,7 @@ export class PolymarketTool implements MarketTool {
                 lastError = error;
 
                 // Check for block
-                if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("429") || msg.includes("Service Unavailable")) {
+                if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("429") || msg.includes("Service Unavailable") || msg.includes("CLOUDFLARE_BLOCK")) {
                     console.warn(`[TRADE] 🚫 Blocked/Throttled (${msg}). Rotating proxy...`);
                     ProxyManager.rotate();
                     // loop spins again with new proxy (because ProxyManager.rotate() patches global axios)
