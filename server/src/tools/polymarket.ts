@@ -364,7 +364,7 @@ export class PolymarketTool implements MarketTool {
     }
 
     async place_trade(trade: TradeParams): Promise<{ status: string; txId: string; price: number; settlementPrice?: number }> {
-        const retries = 3;
+        const retries = 15; // Increased from 3 to 15 to cycle through more proxies
         let lastError: any;
 
         for (let i = 0; i < retries; i++) {
@@ -377,6 +377,17 @@ export class PolymarketTool implements MarketTool {
                 }
 
                 console.log(`[TRADE] 🔵 REQUEST: ${trade.side} ${trade.amount} on ${trade.marketId} for ${trade.userId}`);
+
+                // DEBUG: Verify Proxy IP
+                try {
+                    const ipRes = await ProxyManager.fetch("https://api.ipify.org?format=json", {}, 1); // 1 retry only
+                    if (ipRes.ok) {
+                        const ipData: any = await ipRes.json();
+                        console.log(`[TRADE] 🕵️ Current Proxy IP: ${ipData.ip}`);
+                    }
+                } catch (e) {
+                    console.log("[TRADE] ⚠️ Could not verify Proxy IP (Proxy might be dead)");
+                }
 
                 const user = await prisma.user.findUnique({ where: { id: trade.userId } });
                 if (!user || !user.scwOwnerPrivateKey) throw new Error("User or Key not found");
@@ -549,11 +560,20 @@ export class PolymarketTool implements MarketTool {
                 const msg = error?.message || "";
                 lastError = error;
 
-                // Check for block
-                if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("429") || msg.includes("Service Unavailable") || msg.includes("CLOUDFLARE_BLOCK")) {
+                // Check for block (Explicit or inferred from ProxyManager)
+                const isExplicitBlock = msg.includes("403") || msg.includes("Forbidden") || msg.includes("429") || msg.includes("Service Unavailable") || msg.includes("CLOUDFLARE_BLOCK");
+                const isGenericError = msg === "Order Failed" || msg.includes("request error");
+
+                // If generic error happened within 2s of a proxy block, assume it was swallowed
+                const wasRecentlyBlocked = (Date.now() - ProxyManager.lastBlockTimestamp) < 2000;
+
+                if (isExplicitBlock || (isGenericError && wasRecentlyBlocked)) {
                     console.warn(`[TRADE] 🚫 Blocked/Throttled (${msg}). Rotating proxy...`);
-                    ProxyManager.rotate();
-                    // loop spins again with new proxy (because ProxyManager.rotate() patches global axios)
+                    // If inferred, we know ProxyManager ALREADY rotated in the interceptor.
+                    // If explicit, we ensure rotation.
+                    if (!wasRecentlyBlocked) ProxyManager.rotate();
+
+                    // Loop spins again with new proxy
                     continue;
                 } else {
                     // Non-blocking error, re-throw immediately
