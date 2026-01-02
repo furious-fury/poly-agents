@@ -244,7 +244,12 @@ export class PolymarketTool implements MarketTool {
             if (!user) return [];
 
             const addresses: string[] = [];
-            if (user.scwAddress) addresses.push(user.scwAddress);
+            if (user.scwAddress) {
+                // User explicit request: Use Proxy ONLY if available
+                addresses.push(user.scwAddress);
+            } else if (user.walletAddress) {
+                addresses.push(user.walletAddress);
+            }
 
             // Define fetcher with null return (Failure = null)
             const fetchForAddress = async (addr: string): Promise<any[] | null> => {
@@ -596,8 +601,11 @@ export class PolymarketTool implements MarketTool {
 
             const DATA_API_URL = "https://data-api.polymarket.com/trades";
             const addresses: string[] = [];
-            if (user.scwAddress) addresses.push(user.scwAddress);
-            else if (user.walletAddress) addresses.push(user.walletAddress);
+            if (user.scwAddress) {
+                addresses.push(user.scwAddress);
+            } else if (user.walletAddress) {
+                addresses.push(user.walletAddress);
+            }
 
             const fetchForAddress = async (addr: string) => {
                 const response = await ProxyManager.fetch(`${DATA_API_URL}?user=${addr}&limit=100&takerOnly=false`);
@@ -701,27 +709,37 @@ export const close_position = async (userId: string, position: any) => {
 
 export const cancel_all_orders = async (userId: string) => {
     try {
-        console.log(`[CANCEL] Request to cancel all orders for user ${userId}`);
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: {
+                id: true,
+                scwAddress: true,
                 walletAddress: true,
-                // privateKey: true, // Not in schema
-                scwAddress: true
+                scwOwnerPrivateKey: true,
+                apiKey: true,
+                apiSecret: true,
+                apiPassphrase: true
             }
         });
 
         if (!user) throw new Error("User not found");
 
-        // Use global PK for now as per widespread usage in this codebase
-        const signer = new ethers.Wallet(process.env.PRIVATE_KEY!);
+        if (!user.scwOwnerPrivateKey) {
+            console.warn("User has no private key available to sign cancel all request.");
+            return;
+        }
+
+        const privateKey = await SecurityService.decrypt(user.scwOwnerPrivateKey, user.id);
+        const signer = new ethers.Wallet(privateKey);
         const chainId = 137;
 
-        // Setup ClobClient 
-        console.log("[CANCEL] Signing Clob Auth...");
-        const creds = await signer.signMessage(
-            "The only way to go fast, is to go well."
-        ) as any;
+        let creds: any;
+        if (user.apiKey && user.apiSecret && user.apiPassphrase) {
+            creds = { key: user.apiKey, secret: user.apiSecret, passphrase: user.apiPassphrase };
+        } else {
+            console.log("[CANCEL_ALL] Using L1 Signature");
+            creds = await signer.signMessage("The only way to go fast, is to go well.") as any;
+        }
 
         const useProxy = !!user.scwAddress;
         const clobClient = new ClobClient(
@@ -735,12 +753,189 @@ export const cancel_all_orders = async (userId: string) => {
 
         console.log(`[CANCEL] ⚠️ Executing Cancel All for ${user.scwAddress || user.walletAddress}...`);
         const response = await clobClient.cancelAll();
-        console.log(`[CANCEL] Result:`, response);
+        console.log(`[CANCEL] Successfully cancelled orders.`);
 
         return response;
 
     } catch (error: any) {
         console.error("Cancel All Failed:", error.message);
+        throw error;
+    }
+};
+
+export const get_open_orders = async (userId: string) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                scwAddress: true,
+                walletAddress: true,
+                apiKey: true,
+                apiSecret: true,
+                apiPassphrase: true,
+                scwOwnerPrivateKey: true // Needed for signer
+            }
+        });
+        if (!user) throw new Error("User not found");
+
+        const provider = getMultiProvider();
+        let signer: ethers.Wallet;
+
+        if (user.scwOwnerPrivateKey) {
+            const privateKey = await SecurityService.decrypt(user.scwOwnerPrivateKey, user.id);
+            signer = new ethers.Wallet(privateKey, provider);
+        } else {
+            // Fallback if no private key stored (shouldn't happen for active traders)
+            // But we can't create a wallet without a key. 
+            // If we have API keys we might not strictly "need" a signer for GET requests in some SDK versions,
+            // but the constructor requires it.
+            console.warn("[OPEN_ORDERS] User has no private key. Cannot init ClobClient.");
+            return [];
+        }
+
+        const chainId = 137;
+
+        // 1. Determine Target Address (Proxy Prefered)
+        const useProxy = !!user.scwAddress;
+        const targetAddress = useProxy ? user.scwAddress! : user.walletAddress!;
+
+        // console.log(`[OPEN_ORDERS] Fetching for ${targetAddress} (Proxy: ${useProxy})...`);
+
+        // 2. Prepare Credentials (L2 Preferred)
+        let creds: any;
+        if (user.apiKey && user.apiSecret && user.apiPassphrase) {
+            // console.log("[OPEN_ORDERS] Using stored L2 API Keys.");
+            creds = { key: user.apiKey, secret: user.apiSecret, passphrase: user.apiPassphrase };
+        } else {
+            console.log("[OPEN_ORDERS] No API Keys found. Generating L1 Signature...");
+            creds = await signer.signMessage("The only way to go fast, is to go well.") as any;
+        }
+
+        // 3. Fetch
+        try {
+            const client = new ClobClient(
+                "https://clob.polymarket.com",
+                chainId,
+                signer,
+                creds,
+                useProxy ? 2 : 0,
+                useProxy ? targetAddress : undefined
+            );
+            const rawOrders = await client.getOpenOrders();
+            // console.log(`[OPEN_ORDERS] Found ${rawOrders.length} orders.`);
+
+            // Enrich with Market Titles (Concurrent Fetch)
+            const enrichedOrders = await Promise.all(rawOrders.map(async (o: any) => {
+                let marketTitle = "Unknown Market";
+                o.marketTitle = "Unknown Market";
+                o.marketImage = "";
+
+                // FETCH MARKET DETAILS from Gamma API
+                // The CLOB 'market' field corresponds to the 'conditionId' in Gamma.
+                try {
+                    if (o.market) {
+                        const gammaUrl = `https://gamma-api.polymarket.com/markets?condition_ids=${o.market}`;
+                        const response = await ProxyManager.fetch(gammaUrl);
+                        if (response.ok) {
+                            const markets = await response.json();
+                            // Find the market that actually contains this asset_id/token_id
+                            const matchingMarket = Array.isArray(markets)
+                                ? markets.find((m: any) => m.clobTokenIds && m.clobTokenIds.includes(o.asset_id))
+                                : null;
+
+                            if (matchingMarket) {
+                                o.marketTitle = matchingMarket.question;
+                                o.marketImage = matchingMarket.image;
+                            } else {
+                                console.warn(`[OPEN_ORDERS] Gamma returned no matching market for condition_id ${o.market} and asset_id ${o.asset_id}`);
+                            }
+                        } else {
+                            console.warn(`[OPEN_ORDERS] Gamma fetch failed for condition_id ${o.market}: ${response.status}`);
+                        }
+                    }
+                } catch (err) {
+                    console.warn(`[OPEN_ORDERS] Failed to resolve title for ${o.asset_id}`);
+                }
+
+                return {
+                    orderID: o.id,
+                    marketId: o.market, // Condition ID
+                    marketTitle: o.marketTitle,
+                    marketImage: o.marketImage,
+                    asset_id: o.asset_id,
+                    side: o.side,
+                    price: o.price,
+                    size: o.size_matched ? (Number(o.original_size) - Number(o.size_matched)).toString() : o.original_size,
+                    originalSize: o.original_size,
+                    sizeMatched: o.size_matched || "0",
+                    expiration: o.expiration,
+                    orderType: o.order_type, // GTC, FOK, etc
+                    outcome: o.outcome,
+                    timestamp: o.created_at
+                };
+            }));
+
+            return enrichedOrders;
+
+        } catch (e: any) {
+            console.error(`[OPEN_ORDERS] Failed for ${targetAddress}`, e?.message);
+            return [];
+        }
+    } catch (error: any) {
+        console.error("fetch open orders error", error);
+        return [];
+    }
+};
+
+export const cancel_order = async (userId: string, orderId: string) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                scwAddress: true,
+                walletAddress: true,
+                scwOwnerPrivateKey: true,
+                apiKey: true,
+                apiSecret: true,
+                apiPassphrase: true
+            }
+        });
+        if (!user) throw new Error("User not found");
+
+        if (!user.scwOwnerPrivateKey) {
+            throw new Error("User has no private key available to sign cancel request.");
+        }
+
+        const privateKey = await SecurityService.decrypt(user.scwOwnerPrivateKey, user.id);
+        const signer = new ethers.Wallet(privateKey);
+        const chainId = 137;
+
+        let creds: any;
+        if (user.apiKey && user.apiSecret && user.apiPassphrase) {
+            creds = { key: user.apiKey, secret: user.apiSecret, passphrase: user.apiPassphrase };
+        } else {
+            console.log("[CANCEL] Using L1 Signature for Auth");
+            creds = await signer.signMessage("The only way to go fast, is to go well.") as any;
+        }
+
+        const useProxy = !!user.scwAddress;
+        const clobClient = new ClobClient(
+            "https://clob.polymarket.com",
+            chainId,
+            signer,
+            creds,
+            useProxy ? 2 : 0,
+            useProxy ? user.scwAddress! : undefined
+        );
+
+        console.log(`[CANCEL] Cancelling order ${orderId} for ${user.scwAddress || user.walletAddress}...`);
+        const res = await clobClient.cancelOrder({ orderID: orderId });
+        console.log(`[CANCEL] Order cancelled successfully.`);
+        return res;
+    } catch (error: any) {
+        console.error("cancel order error", error);
         throw error;
     }
 };

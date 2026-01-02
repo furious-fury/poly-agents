@@ -10,6 +10,7 @@ import {
 import { Ghost, PlusCircle, MinusCircle } from "lucide-react";
 import { useTrades } from "../lib/api";
 import { formatDistanceToNow } from "date-fns";
+import { Card } from "@/components/ui/card";
 
 interface TradeHistoryProps {
     userId: string | null;
@@ -21,7 +22,7 @@ export default function TradeHistory({ userId, className }: TradeHistoryProps) {
     const isEmpty = !isLoading && (!trades || trades.length === 0);
 
     return (
-        <div className={`flex flex-col ${className || 'h-[400px]'}`}>
+        <Card className={`bg-white border border-gray-100 shadow-card p-6 overflow-hidden flex flex-col ${className || 'h-[400px]'} rounded-4xl`}>
             {isLoading && (
                 <div className="flex-1 flex items-center justify-center text-gray-400">
                     Loading history...
@@ -128,6 +129,6 @@ export default function TradeHistory({ userId, className }: TradeHistoryProps) {
                     </Table>
                 </div>
             )}
-        </div>
+        </Card>
     );
 }

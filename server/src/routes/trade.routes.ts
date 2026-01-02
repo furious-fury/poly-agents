@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { TradeService, type TradeRequest } from "../services/TradeService.js";
 import { prisma } from "../config/database.js";
+import { requireAuth } from "../middleware/auth.js";
 
 export const tradeRouter = Router();
 
@@ -218,3 +219,34 @@ tradeRouter.post("/cancel-all", async (req, res) => {
         res.status(500).json({ success: false, error: err instanceof Error ? err.message : "Failed to cancel orders" });
     }
 });
+
+// GET /api/trade/open-orders/:userId
+tradeRouter.get("/open-orders/:userId", requireAuth, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) return res.status(400).json({ success: false, error: "Missing userId" });
+
+        const { get_open_orders } = await import("../tools/polymarket.js");
+        const orders = await get_open_orders(userId);
+        res.json({ success: true, orders });
+    } catch (err) {
+        console.error("Open orders error:", err);
+        res.status(500).json({ success: false, error: "Failed to fetch open orders" });
+    }
+});
+
+// POST /api/trade/cancel
+tradeRouter.post("/cancel", requireAuth, async (req, res) => {
+    try {
+        const { userId, orderId } = req.body;
+        if (!userId || !orderId) return res.status(400).json({ success: false, error: "Missing parameters" });
+
+        const { cancel_order } = await import("../tools/polymarket.js");
+        const result = await cancel_order(userId, orderId);
+        res.json({ success: true, result });
+    } catch (err) {
+        console.error("Cancel trade error:", err);
+        res.status(500).json({ success: false, error: "Failed to cancel order" });
+    }
+});
+

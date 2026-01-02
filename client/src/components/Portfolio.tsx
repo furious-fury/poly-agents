@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Chart from './Chart'
 
 import ActivePositions from './ActivePositions'
-import { useProxyWallet, useUserPositions, usePortfolioHistory } from '../lib/api'
+import OpenOrders from './OpenOrders';
+import TradeHistory from './TradeHistory';
+import { useProxyWallet, useUserPositions, usePortfolioHistory, useTrades } from '../lib/api'
+import { Wallet } from 'lucide-react';
 
 interface PortfolioProps {
     userId: string | null;
@@ -10,9 +13,25 @@ interface PortfolioProps {
 
 function Portfolio({ userId }: PortfolioProps) {
     const { data: proxyWallet, isLoading: walletLoading } = useProxyWallet(userId || "");
-    const { data: positions, isLoading: positionsLoading } = useUserPositions(userId || "");
+    const { data: positions, isLoading: positionsLoading, refetch: refetchPositions } = useUserPositions(userId || "");
     const [timeRange, setTimeRange] = useState<'24h' | '1w' | '1m'>('24h');
-    const { data: history } = usePortfolioHistory(userId || "", timeRange);
+    const { data: history, refetch: refetchHistory } = usePortfolioHistory(userId || "", timeRange);
+
+    // We also need to refetch trades for the history tab
+    const { refetch: refetchTrades } = useTrades(userId || "");
+
+    // Tab State
+    const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
+
+    // Auto-fetch on tab switch
+    useEffect(() => {
+        if (activeTab === 'positions') {
+            refetchPositions();
+        } else if (activeTab === 'history') {
+            refetchHistory(); // Chart history
+            refetchTrades();  // Trade list
+        }
+    }, [activeTab, refetchPositions, refetchHistory, refetchTrades]);
 
     const balanceNum = proxyWallet?.balance || 0;
     const balanceFormatted = balanceNum.toFixed(2);
@@ -113,9 +132,9 @@ function Portfolio({ userId }: PortfolioProps) {
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Chart Section - Takes up full width now */}
-                <div className="lg:col-span-3 bg-white p-6 rounded-4xl shadow-card border border-gray-100">
+            <div className="grid grid-cols-1 gap-6">
+                {/* Chart Section - Always Visible at Top */}
+                <div className="bg-white p-6 rounded-4xl shadow-card border border-gray-100">
                     <Chart
                         data={history || []}
                         className="h-[350px]"
@@ -123,22 +142,51 @@ function Portfolio({ userId }: PortfolioProps) {
                         onTimeRangeChange={setTimeRange}
                     />
                 </div>
-            </div>
 
-            {/* Active Positions Table */}
-            <div>
-                <ActivePositions userId={userId} className="h-[600px]" />
+                {/* Tabs & Content */}
+                <div>
+                    {/* Tab Navigation */}
+                    <div className="flex items-center gap-6 border-b border-gray-200 pb-0 mb-6">
+                        <button
+                            onClick={() => setActiveTab('positions')}
+                            className={`pb-3 text-sm font-bold transition-colors relative uppercase tracking-wide ${activeTab === 'positions' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-900'}`}
+                        >
+                            Positions
+                            {activeTab === 'positions' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('orders')}
+                            className={`pb-3 text-sm font-bold transition-colors relative uppercase tracking-wide ${activeTab === 'orders' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-900'}`}
+                        >
+                            Open Orders
+                            {activeTab === 'orders' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('history')}
+                            className={`pb-3 text-sm font-bold transition-colors relative uppercase tracking-wide ${activeTab === 'history' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-900'}`}
+                        >
+                            History
+                            {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />}
+                        </button>
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className="min-h-[600px]">
+                        {activeTab === 'positions' && (
+                            <ActivePositions userId={userId} className="h-[600px]" />
+                        )}
+
+                        {activeTab === 'orders' && (
+                            <OpenOrders userId={userId || ""} />
+                        )}
+
+                        {activeTab === 'history' && (
+                            <TradeHistory userId={userId || ""} className="h-[600px]" />
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
-    )
-}
-
-function Wallet({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-            <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" />
-            <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
-        </svg>
     )
 }
 

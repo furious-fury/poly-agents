@@ -410,3 +410,41 @@ export const useClosePosition = () => {
         }
     });
 };
+
+export const useOpenOrders = (userId: string) => {
+    return useQuery({
+        queryKey: ['openOrders', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            // Use the fetch wrapper if available, else standard fetch with auth
+            const res = await fetch(`${API_URL}/trade/open-orders/${userId}`, {
+                headers: authHeaders()
+            });
+            if (!res.ok) throw new Error("Failed to fetch open orders");
+            const data = await res.json();
+            return data.orders;
+        },
+        enabled: !!userId,
+        refetchInterval: 10000
+    });
+};
+
+export const useCancelOrder = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ userId, orderId }: { userId: string, orderId: string }) => {
+            const res = await fetch(`${API_URL}/trade/cancel`, {
+                method: "POST",
+                headers: authHeaders(),
+                body: JSON.stringify({ userId, orderId })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || "Failed to cancel order");
+            return data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['openOrders', variables.userId] });
+            queryClient.invalidateQueries({ queryKey: ['userSettings', variables.userId] }); // Balance might update
+        }
+    });
+};
