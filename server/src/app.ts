@@ -28,10 +28,20 @@ app.set('trust proxy', 1);
 // Rate Limiting: Prevent brute-force and DOS
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // Limit each IP to 500 requests per window (approx 1 request every 2s on avg)
+    max: 3000, // Limit each IP to 3000 requests per window (supports ~6 tabs polling every 2s)
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: "Too many requests, please try again later." }
+    message: { error: "Too many requests, please try again later." },
+    skip: (req) => {
+        // Whitelist localhost and specific IPs
+        const ip = req.ip || req.socket.remoteAddress || '';
+        if (ip === '127.0.0.1' || ip === '::1') return true;
+
+        const whitelist = (process.env.WHITELIST_IPS || '').split(',').map(i => i.trim()).filter(Boolean);
+        if (whitelist.some(w => ip.includes(w))) return true;
+
+        return false;
+    }
 });
 app.use(limiter);
 
