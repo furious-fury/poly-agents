@@ -547,7 +547,7 @@ export class PolymarketTool implements MarketTool {
                     feeRateBps: 0,
                     expiration: 0,
                     nonce: 0
-                }, { negRisk: true });
+                }, { negRisk });
 
                 const postResp = await clobClient.postOrder(order, orderType === "FOK" ? "FOK" : "GTC");
                 if (!postResp.success && !postResp.orderID) throw new Error(postResp.errorMsg || "Order Failed");
