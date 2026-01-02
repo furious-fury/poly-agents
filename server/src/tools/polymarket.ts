@@ -687,19 +687,46 @@ export const close_position = async (userId: string, position: any) => {
     try {
         console.log(`[CLOSE] Closing position for ${position.marketTitle}`);
 
-        // Safe Price: 5% below market (for SELL) to ensure fill, but floored at 0.01
-        let safePrice = Number(position.currentPrice) * 0.95;
-        if (safePrice < 0.01) safePrice = 0.01; // Clamp to min tick
-        if (safePrice > 0.99) safePrice = 0.99; // Clamp to max tick
+        const token_id = position.asset_id || position.marketId;
+        let executionPrice = 0;
+
+        // 1. Fetch Order Book to get REAL-TIME liquidity
+        try {
+            const bookRes = await ProxyManager.fetch(`https://clob.polymarket.com/book?token_id=${token_id}`);
+            if (bookRes.ok) {
+                const book = await bookRes.json();
+                if (book.bids && book.bids.length > 0) {
+                    // Sell into the Best Buyer (Highest Bid)
+                    // We match their price exactly to execute immediately (Maker/Taker)
+                    const bestBid = Number(book.bids[0].price);
+                    console.log(`[CLOSE] Found Best Bid: ${bestBid}`);
+                    executionPrice = bestBid;
+                }
+            }
+        } catch (err) {
+            console.warn("[CLOSE] Failed to fetch orderbook, falling back to last price estimate.");
+        }
+
+        // 2. Fallback Logic if Book is empty or failed
+        if (!executionPrice) {
+            // Aggressive discount to FORCE a fill if we can't see the book
+            executionPrice = Number(position.currentPrice) * 0.90;
+        }
+
+        // 3. Safety Clamps
+        if (executionPrice < 0.01) executionPrice = 0.01; // Min Tick
+        if (executionPrice > 0.99) executionPrice = 0.99; // Max Tick
+
+        console.log(`[CLOSE] Executing Sell at ${executionPrice.toFixed(2)}`);
 
         // Pass SHARES directly for SELL. logic in place_trade handles it.
         return polymarketTool.place_trade({
             userId,
-            marketId: position.marketId || position.asset_id,
+            marketId: token_id,
             outcome: position.outcome,
             side: "SELL",
             amount: Number(position.shares), // Direct Share Count
-            price: Number(safePrice.toFixed(2))
+            price: Number(executionPrice.toFixed(2))
         });
     } catch (e) {
         console.error("close_position error", e);
