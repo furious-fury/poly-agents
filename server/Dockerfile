@@ -8,6 +8,14 @@ COPY . .
 # Install production dependencies
 RUN npm install --legacy-peer-deps
 
+# Build Arguments
+ARG DATABASE_URL
+ARG DIRECT_URL
+
+# Set as Env Vars for Prisma Generate
+ENV DATABASE_URL=$DATABASE_URL
+ENV DIRECT_URL=$DIRECT_URL
+
 # Generate Prisma Client
 RUN npx prisma generate
 
