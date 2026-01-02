@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Zap, Globe, Shield, Rocket } from "lucide-react";
+import { Zap, Rocket } from "lucide-react";
 
 const roadmapItems = [
     {
