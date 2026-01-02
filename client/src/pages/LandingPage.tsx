@@ -8,6 +8,7 @@ import { FadeIn } from '../components/FadeIn';
 // Reusing existing components for sections but with new wrapper classes if needed
 import { TrustSection } from '../components/landing/TrustSection';
 import { SolutionsSection } from '../components/landing/SolutionsSection';
+import { RoadmapSection } from '../components/landing/RoadmapSection';
 import { FaqSection } from '../components/landing/FaqSection';
 
 function LandingPage() {
@@ -468,6 +469,9 @@ function LandingPage() {
             <FadeIn>
                 <SolutionsSection />
             </FadeIn>
+
+            {/* Roadmap Section */}
+            <RoadmapSection />
 
             <FadeIn>
                 <FaqSection />
