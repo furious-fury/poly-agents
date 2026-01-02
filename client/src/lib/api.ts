@@ -194,7 +194,8 @@ export const useUserLogs = (userId: string) => {
             return data.logs;
         },
         enabled: !!userId,
-        refetchInterval: 60000,
+        refetchInterval: 2000, // Live updates every 2s
+        refetchIntervalInBackground: true,
     });
 };
 
