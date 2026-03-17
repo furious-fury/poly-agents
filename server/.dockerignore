@@ -1,0 +1,8 @@
+node_modules
+dist
+debug_log.txt
+output.log
+npm-debug.log
+.env
+.DS_Store
+*.md
